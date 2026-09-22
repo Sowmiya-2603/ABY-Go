@@ -443,11 +443,44 @@ async function findNearbyPlaces(lat, lon) {
   showStatus("🔎 Looking up places near that spot...");
 
   try {
-    const url =
-      "https://api.bigdatacloud.net/data/reverse-geocode-client" +
-      "?latitude=" + lat + "&longitude=" + lon + "&localityLanguage=en";
-    const response = await fetch(url);
-    const data = await response.json();
+    // First try BigDataCloud's reverse geocoder...
+    let data = null;
+    try {
+      const url =
+        "https://api.bigdatacloud.net/data/reverse-geocode-client" +
+        "?latitude=" + lat + "&longitude=" + lon + "&localityLanguage=en";
+      const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      data = await response.json();
+    } catch (error) {
+      // it failed — the backup below takes over
+    }
+
+    // ...and if it failed or came back empty (it has usage limits),
+    // ask OpenStreetMap's reverse geocoder instead, reshaping its
+    // answer to look the same.
+    const gotSomething = data &&
+      (data.locality || data.city || data.principalSubdivision || data.countryName);
+    if (!gotSomething) {
+      const url2 =
+        "https://nominatim.openstreetmap.org/reverse" +
+        "?lat=" + lat + "&lon=" + lon +
+        "&format=jsonv2&addressdetails=1&accept-language=en&zoom=10";
+      const response2 = await fetch(url2, { signal: AbortSignal.timeout(12000) });
+      const j = await response2.json();
+      const a = j.address || {};
+      data = {
+        locality: a.village || a.town || a.suburb || a.hamlet || "",
+        city: a.city || a.municipality || "",
+        principalSubdivision: a.state || a.province || "",
+        countryName: a.country || "",
+        countryCode: (a.country_code || "").toUpperCase(),
+        localityInfo: {
+          administrative: [
+            { name: a.county || a.state_district || "", adminLevel: 6 },
+          ],
+        },
+      };
+    }
 
     // Collect suggestions, most precise first, skipping duplicates
     const suggestions = [];
@@ -2274,6 +2307,19 @@ function renderSavedList() {
 /* ------------------------------------------------------------
    RUN ON PAGE LOAD
    ------------------------------------------------------------ */
+// Some browsers (e.g. Macs in Low Power Mode) block videos from
+// starting by themselves. If the background video was blocked,
+// start it on the user's first click or key press instead.
+function nudgeBackgroundVideo() {
+  const bg = document.querySelector(".bg-video");
+  if (bg && bg.paused) {
+    bg.play().catch(function () { /* it will retry on next tap */ });
+  }
+}
+nudgeBackgroundVideo();
+document.addEventListener("pointerdown", nudgeBackgroundVideo);
+document.addEventListener("keydown", nudgeBackgroundVideo);
+
 fillCurrencyDropdowns();
 renderSavedList();
 // The journey ALWAYS begins at "Where are you now?". If a home
