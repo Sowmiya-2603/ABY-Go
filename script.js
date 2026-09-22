@@ -257,9 +257,9 @@ function drawGlobe() {
   const ocean = ctx.createRadialGradient(
     GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
   );
-  ocean.addColorStop(0, "#2f6ea8");
-  ocean.addColorStop(0.55, "#144a7c");
-  ocean.addColorStop(1, "#082846");
+  ocean.addColorStop(0, "#25608f");
+  ocean.addColorStop(0.55, "#0e3a60");
+  ocean.addColorStop(1, "#041a30");
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
   ctx.fillStyle = ocean;
@@ -288,11 +288,11 @@ function drawGlobe() {
     const land = ctx.createRadialGradient(
       GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
     );
-    land.addColorStop(0, "#6aa96b");
-    land.addColorStop(0.55, "#3d7a4d");
-    land.addColorStop(1, "#1d4a30");
+    land.addColorStop(0, "#5b915d");
+    land.addColorStop(0.55, "#2f6340");
+    land.addColorStop(1, "#123122");
     ctx.fillStyle = land;
-    ctx.strokeStyle = "rgba(8, 40, 25, 0.55)";
+    ctx.strokeStyle = "rgba(5, 28, 17, 0.6)";
     ctx.lineWidth = 0.6;
     for (const feature of worldShapes.features) {
       const geom = feature.geometry;
@@ -315,13 +315,25 @@ function drawGlobe() {
   const shade = ctx.createRadialGradient(
     GLOBE_CX - 90, GLOBE_CY - 110, 30, GLOBE_CX, GLOBE_CY, GLOBE_R
   );
-  shade.addColorStop(0, "rgba(255, 255, 255, 0.14)");
-  shade.addColorStop(0.4, "rgba(255, 255, 255, 0)");
-  shade.addColorStop(0.75, "rgba(4, 10, 25, 0.18)");
-  shade.addColorStop(1, "rgba(4, 10, 25, 0.6)");
+  shade.addColorStop(0, "rgba(255, 255, 255, 0.12)");
+  shade.addColorStop(0.35, "rgba(255, 255, 255, 0)");
+  shade.addColorStop(0.65, "rgba(3, 8, 20, 0.22)");
+  shade.addColorStop(0.88, "rgba(3, 8, 20, 0.5)");
+  shade.addColorStop(1, "rgba(3, 8, 20, 0.78)");
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
   ctx.fillStyle = shade;
+  ctx.fill();
+
+  // A whisper of sunlight glinting off the ocean near the light
+  const glint = ctx.createRadialGradient(
+    GLOBE_CX - 120, GLOBE_CY - 140, 5, GLOBE_CX - 120, GLOBE_CY - 140, 130
+  );
+  glint.addColorStop(0, "rgba(255, 255, 255, 0.16)");
+  glint.addColorStop(1, "rgba(255, 255, 255, 0)");
+  ctx.beginPath();
+  ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
+  ctx.fillStyle = glint;
   ctx.fill();
 
   // A thin outline around the globe
