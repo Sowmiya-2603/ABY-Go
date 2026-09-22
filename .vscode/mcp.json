@@ -1,0 +1,14 @@
+{
+	"servers": {
+		"one.faf/claude-faf-mcp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"claude-faf-mcp@6.0.0"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "6.0.0"
+		}
+	},
+	"inputs": []
+}
