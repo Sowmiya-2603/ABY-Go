@@ -246,7 +246,7 @@ function drawGlobe() {
     GLOBE_CX, GLOBE_CY, GLOBE_R - 4, GLOBE_CX, GLOBE_CY, GLOBE_R + 18
   );
   glow.addColorStop(0, "rgba(120, 170, 255, 0)");
-  glow.addColorStop(0.35, "rgba(120, 170, 255, 0.35)");
+  glow.addColorStop(0.35, "rgba(120, 170, 255, 0.15)");
   glow.addColorStop(1, "rgba(120, 170, 255, 0)");
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R + 18, 0, Math.PI * 2);
@@ -339,7 +339,7 @@ function drawGlobe() {
   // A thin outline around the globe
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(190, 215, 255, 0.35)";
+  ctx.strokeStyle = "rgba(190, 215, 255, 0.2)";
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
