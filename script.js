@@ -245,9 +245,9 @@ function drawGlobe() {
   const ocean = ctx.createRadialGradient(
     GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
   );
-  ocean.addColorStop(0, "#2493d6");
-  ocean.addColorStop(0.55, "#0d5f9b");
-  ocean.addColorStop(1, "#07406b");
+  ocean.addColorStop(0, "#1877b5");
+  ocean.addColorStop(0.55, "#094d81");
+  ocean.addColorStop(1, "#053158");
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
   ctx.fillStyle = ocean;
@@ -276,9 +276,9 @@ function drawGlobe() {
     const land = ctx.createRadialGradient(
       GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
     );
-    land.addColorStop(0, "#37b365");
-    land.addColorStop(0.55, "#22884b");
-    land.addColorStop(1, "#156138");
+    land.addColorStop(0, "#2b9c55");
+    land.addColorStop(0.55, "#1a7440");
+    land.addColorStop(1, "#0f4e2d");
     ctx.fillStyle = land;
     ctx.strokeStyle = "rgba(5, 28, 17, 0.6)";
     ctx.lineWidth = 0.6;
@@ -303,7 +303,7 @@ function drawGlobe() {
   const shade = ctx.createRadialGradient(
     GLOBE_CX - 90, GLOBE_CY - 110, 30, GLOBE_CX, GLOBE_CY, GLOBE_R
   );
-  shade.addColorStop(0, "rgba(255, 255, 255, 0.12)");
+  shade.addColorStop(0, "rgba(255, 255, 255, 0.16)");
   shade.addColorStop(0.35, "rgba(255, 255, 255, 0)");
   shade.addColorStop(0.7, "rgba(3, 8, 20, 0.1)");
   shade.addColorStop(0.9, "rgba(3, 8, 20, 0.25)");
