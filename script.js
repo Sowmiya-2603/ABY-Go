@@ -823,16 +823,34 @@ function finishHomeSetup(destination) {
    pixel work during the animation at all.
    ------------------------------------------------------------ */
 
-// Which video pixels are background (not the plane)?
-//  - anything cool (blue >= red): the white & gray backgrounds
-//  - near-white: compression noise like (255, 252, 249)
-//  - dark pixels: the dashed flight-path line in the video
+// Which video pixels are background? We grab the plane from a
+// moment when the whole screen behind it is one flat gray,
+// measured from the file as (190, 203, 209). ONLY pixels close to
+// that exact colour count as background — so the plane's dark
+// windows, its shiny white spots and every other detail can never
+// be mistaken for background and punched out.
+// The video only ever shows two backgrounds: the white first page
+// (255,255,255) and the gray second page (190,203,209). Any pixel
+// that sits on the straight blend between those two colours (that
+// includes the soft wipe edge between them) is background. The
+// plane itself is warm cream (more red than blue), so it never
+// lands on that blend line.
 function isVideoBackground(r, g, b) {
+  const mix = Math.max(0, Math.min(1, (r - 190) / 65));
   return (
-    b >= r - 2 ||
-    (r > 245 && g > 245 && b > 245) ||
-    (r < 100 && g < 100 && b < 100)
+    Math.abs(r - (190 + 65 * mix)) <= 12 &&
+    Math.abs(g - (203 + 52 * mix)) <= 12 &&
+    Math.abs(b - (209 + 46 * mix)) <= 12
   );
+}
+
+// Exact matches for each page colour, used to check we grabbed the
+// right video frame before cutting the plane out of it.
+function isPageGray(r, g, b) {
+  return Math.abs(r - 190) <= 10 && Math.abs(g - 203) <= 10 && Math.abs(b - 209) <= 10;
+}
+function isPageWhite(r, g, b) {
+  return r >= 245 && g >= 245 && b >= 245;
 }
 
 // Cut the plane out of the video into a transparent image.
@@ -849,24 +867,43 @@ async function getPlaneSprite() {
     });
   }
 
-  // Jump to a frame where the whole plane is on screen
-  video.currentTime = 0.62;
-  await new Promise(function (resolve) { video.onseeked = resolve; });
-
-  // Draw the frame small, then remove the background with a
-  // "flood fill" from the picture's borders: like pouring water in
-  // from every edge, it erases all background it can flow into —
-  // even the pockets between the wings and the body — but it can
-  // never reach the shiny white spots INSIDE the plane's outline,
-  // so those stay untouched.
+  // Jump to the moment mid-wipe when the WHOLE plane is on screen
+  // (later frames have its nose already off the right edge).
+  // Seeking can land on the wrong frame while the video is still
+  // loading, so check the frame looks right — gray page on the
+  // left, white page on the right — and retry until it does.
   const W = 960, H = 540;
   const work = document.createElement("canvas");
   work.width = W;
   work.height = H;
   const ctx = work.getContext("2d", { willReadFrequently: true });
-  ctx.drawImage(video, 0, 0, W, H);
-  const frame = ctx.getImageData(0, 0, W, H);
+
+  let frame = null;
+  for (const t of [0.7, 0.72, 0.66, 0.74, 0.7]) {
+    video.currentTime = t;
+    await new Promise(function (resolve) { video.onseeked = resolve; });
+    await new Promise(function (resolve) { setTimeout(resolve, 60); });
+    ctx.drawImage(video, 0, 0, W, H);
+    frame = ctx.getImageData(0, 0, W, H);
+    let grayHits = 0, whiteHits = 0, checks = 0;
+    for (let y = 10; y < H - 10; y += 5) {
+      checks++;
+      let i = (y * W + 8) * 4; // a column near the left edge
+      if (isPageGray(frame.data[i], frame.data[i + 1], frame.data[i + 2])) grayHits++;
+      i = (y * W + 930) * 4; // a column near the right edge
+      if (isPageWhite(frame.data[i], frame.data[i + 1], frame.data[i + 2])) whiteHits++;
+    }
+    if (grayHits > checks * 0.9 && whiteHits > checks * 0.9) break;
+    frame = null;
+  }
+  if (!frame) throw new Error("could not reach the mid-wipe frame");
   const px = frame.data;
+
+  // Remove the background with a "flood fill" from the picture's
+  // borders: like pouring water in from every edge, it erases all
+  // the gray it can flow into — even the pockets between the wings
+  // and the body — while everything inside the plane's outline
+  // stays untouched.
 
   const visited = new Uint8Array(W * H);
   const queue = [];
@@ -878,6 +915,22 @@ async function getPlaneSprite() {
     visited[p] = 1;
     px[i + 3] = 0; // erase this background pixel
     queue.push(p);
+  }
+
+  // The video has a thin strip of compression junk along its right
+  // and bottom edges that is neither page colour — wipe it out
+  // directly and let the flood spread inward from there too.
+  function forceErase(p) {
+    if (visited[p]) return;
+    visited[p] = 1;
+    px[p * 4 + 3] = 0;
+    queue.push(p);
+  }
+  for (let y = 0; y < H; y++) {
+    for (let x = 936; x < W; x++) forceErase(y * W + x);
+  }
+  for (let y = 532; y < H; y++) {
+    for (let x = 0; x < W; x++) forceErase(y * W + x);
   }
 
   // Start pouring from every border pixel...
@@ -894,12 +947,12 @@ async function getPlaneSprite() {
     if (p < W * (H - 1)) pour(p + W);
   }
 
-  // Clean-up pass: the dashed flight-path line leaves small
-  // leftover blobs. Group the visible pixels into connected
-  // "islands" and erase every island smaller than 80 pixels —
-  // only the plane itself is big enough to survive.
+  // Clean-up pass: the dashed flight-path line and stray specks
+  // leave leftover blobs. Group the visible pixels into connected
+  // "islands" and keep ONLY the biggest one — the plane.
   const island = new Int32Array(W * H); // 0 = not labelled yet
   let islandId = 0;
+  const allIslands = [];
   for (let start = 0; start < W * H; start++) {
     if (px[start * 4 + 3] === 0 || island[start] !== 0) continue;
 
@@ -922,11 +975,35 @@ async function getPlaneSprite() {
         }
       }
     }
+    allIslands.push(members);
+  }
+  allIslands.sort(function (a, b) { return b.length - a.length; });
+  for (let k = 1; k < allIslands.length; k++) {
+    for (const p of allIslands[k]) px[p * 4 + 3] = 0;
+  }
 
-    // Tiny island? Erase it.
-    if (members.length < 80) {
-      for (const p of members) px[p * 4 + 3] = 0;
-    }
+  // Safety pass: make the plane SOLID. Any erased pocket that is
+  // fully enclosed by the plane (not connected to the outside) gets
+  // its original colour back, so the body can never be see-through.
+  const outside = new Uint8Array(W * H);
+  const oq = [];
+  function mark(p) {
+    if (outside[p] || px[p * 4 + 3] > 0) return;
+    outside[p] = 1;
+    oq.push(p);
+  }
+  for (let x = 0; x < W; x++) { mark(x); mark((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { mark(y * W); mark(y * W + W - 1); }
+  while (oq.length > 0) {
+    const p = oq.pop();
+    const x = p % W;
+    if (x > 0) mark(p - 1);
+    if (x < W - 1) mark(p + 1);
+    if (p >= W) mark(p - W);
+    if (p < W * (H - 1)) mark(p + W);
+  }
+  for (let p = 0; p < W * H; p++) {
+    if (px[p * 4 + 3] === 0 && !outside[p]) px[p * 4 + 3] = 255;
   }
 
   // Find the box around what is left (the plane)
