@@ -26,6 +26,7 @@ To view it inside VS Code itself: press `Cmd+Shift+P` → **Simple Browser: Show
 - `index.html` — page structure
 - `style.css` — night-sky theme and card layout
 - `script.js` — globe drawing, API calls, saved trips (heavily commented)
+- `earth.jpg` — NASA "Blue Marble" satellite photo (public domain), painted onto the globe
 
 ## APIs used (all keyless)
 

@@ -144,6 +144,94 @@ let rotationLat = 20;   // how much the globe is tilted
 // The world map shapes (country outlines), loaded as GeoJSON
 let worldShapes = null;
 
+// A real satellite photo of Earth (NASA's "Blue Marble", public
+// domain), stored flat like a world map. Once it loads we paint the
+// globe from it pixel by pixel; until then the plain drawing shows.
+let earthTexture = null; // { data, width, height }
+function loadEarthTexture() {
+  const img = new Image();
+  img.onload = function () {
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const cctx = c.getContext("2d", { willReadFrequently: true });
+    cctx.drawImage(img, 0, 0);
+    earthTexture = {
+      data: cctx.getImageData(0, 0, c.width, c.height).data,
+      width: c.width,
+      height: c.height,
+    };
+    drawGlobe();
+  };
+  img.src = "earth.jpg";
+}
+
+// Reusable buffers for the photo globe, so we don't allocate new
+// ones on every frame while spinning.
+const SPHERE_RES = 480; // photo is drawn at 480x480, then scaled up
+let sphereCanvas = null;
+let sphereImage = null;
+
+/*
+  Paint the satellite photo onto the globe. For every pixel inside
+  the circle we work out which latitude/longitude is under it (the
+  same math the click handler uses) and copy that spot's colour
+  from the flat NASA photo.
+*/
+function drawTexturedSphere(ctx) {
+  if (!sphereCanvas) {
+    sphereCanvas = document.createElement("canvas");
+    sphereCanvas.width = SPHERE_RES;
+    sphereCanvas.height = SPHERE_RES;
+    sphereImage = sphereCanvas.getContext("2d").createImageData(SPHERE_RES, SPHERE_RES);
+  }
+  const out = sphereImage.data;
+  const tex = earthTexture.data;
+  const tw = earthTexture.width;
+  const th = earthTexture.height;
+
+  const toRad = Math.PI / 180;
+  const phi0 = rotationLat * toRad;
+  const sinPhi0 = Math.sin(phi0);
+  const cosPhi0 = Math.cos(phi0);
+  const lonOffset = rotationLon * toRad;
+  const feather = 2 / SPHERE_RES; // soften the outer edge a little
+
+  let k = 0;
+  for (let j = 0; j < SPHERE_RES; j++) {
+    const y = 1 - (2 * (j + 0.5)) / SPHERE_RES; // -1..1, up is +
+    for (let i = 0; i < SPHERE_RES; i++, k += 4) {
+      const x = (2 * (i + 0.5)) / SPHERE_RES - 1;
+      const rho2 = x * x + y * y;
+      if (rho2 > 1) { out[k + 3] = 0; continue; }
+
+      // Inverse orthographic projection (see screenToLatLon)
+      const cosc = Math.sqrt(1 - rho2);
+      const lat = Math.asin(cosc * sinPhi0 + y * cosPhi0);
+      const lon = lonOffset + Math.atan2(x, cosc * cosPhi0 - y * sinPhi0);
+
+      // Where that lat/lon sits inside the flat photo
+      let u = ((lon / toRad + 180) / 360) % 1;
+      if (u < 0) u += 1;
+      const v = (90 - lat / toRad) / 180;
+      let ti = ((Math.min(th - 1, (v * th) | 0) * tw) + Math.min(tw - 1, (u * tw) | 0)) * 4;
+
+      out[k] = tex[ti];
+      out[k + 1] = tex[ti + 1];
+      out[k + 2] = tex[ti + 2];
+      // Fade the very edge of the circle so it isn't jagged
+      const rho = Math.sqrt(rho2);
+      out[k + 3] = rho > 1 - feather ? (255 * (1 - rho)) / feather : 255;
+    }
+  }
+  sphereCanvas.getContext("2d").putImageData(sphereImage, 0, 0);
+  ctx.drawImage(
+    sphereCanvas,
+    0, 0, SPHERE_RES, SPHERE_RES,
+    GLOBE_CX - GLOBE_R, GLOBE_CY - GLOBE_R, GLOBE_R * 2, GLOBE_R * 2
+  );
+}
+
 // Load the country shapes, then draw the globe
 async function loadWorldShapes() {
   try {
@@ -241,6 +329,10 @@ function drawGlobe() {
   const ctx = globeCtx;
   ctx.clearRect(0, 0, GLOBE_SIZE, GLOBE_SIZE);
 
+  if (earthTexture) {
+    // The real satellite photo of Earth
+    drawTexturedSphere(ctx);
+  } else {
   // Ocean: deep blues, lit from the upper left like a real planet
   const ocean = ctx.createRadialGradient(
     GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
@@ -296,6 +388,7 @@ function drawGlobe() {
       ctx.stroke();
     }
   }
+  } // end of the plain (photo-less) globe drawing
 
   // Sphere shading painted over everything: a gentle highlight where
   // the light lands, falling away into shadow at the far edge. This
@@ -2436,4 +2529,5 @@ if (getHomeLocation()) {
 applyStageText();
 drawGlobe();        // draw the plain globe right away
 loadWorldShapes();  // then load the country shapes onto it
+loadEarthTexture(); // and the real satellite photo of Earth
 startAutoSpin();    // gently spin until the user grabs it
