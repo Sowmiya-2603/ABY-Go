@@ -252,8 +252,11 @@ body {
   margin-top: 18px;
 }
 
-.suggestions-title {
-  margin-bottom: 10px;
+/* ".hero .suggestions-title" so it outranks the ".hero p"
+   width limit, keeping the title centred over the buttons */
+.hero .suggestions-title {
+  max-width: none;
+  margin: 0 auto 10px;
   font-weight: 500;
 }
 
