@@ -14,9 +14,21 @@
   />
   <!-- The ?v= number forces browsers to fetch the newest files
        instead of old cached ones. Bump it when you change them. -->
-  <link rel="stylesheet" href="style.css?v=39" />
+  <link rel="stylesheet" href="style.css?v=40" />
 </head>
 <body>
+
+  <!-- Looping video background, behind everything, with a dark
+       tint on top so the words stay easy to read -->
+  <video
+    class="bg-video"
+    src="background.mp4"
+    autoplay
+    muted
+    loop
+    playsinline
+  ></video>
+  <div class="bg-scrim"></div>
 
   <nav class="navbar">
     <div class="nav-logo">
@@ -179,6 +191,6 @@
     <span id="plane" class="plane" hidden>✈️</span>
   </div>
 
-  <script src="script.js?v=39"></script>
+  <script src="script.js?v=40"></script>
 </body>
 </html>
