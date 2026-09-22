@@ -241,25 +241,13 @@ function drawGlobe() {
   const ctx = globeCtx;
   ctx.clearRect(0, 0, GLOBE_SIZE, GLOBE_SIZE);
 
-  // A soft blue "atmosphere" glow just outside the globe's edge
-  const glow = ctx.createRadialGradient(
-    GLOBE_CX, GLOBE_CY, GLOBE_R - 4, GLOBE_CX, GLOBE_CY, GLOBE_R + 18
-  );
-  glow.addColorStop(0, "rgba(120, 170, 255, 0)");
-  glow.addColorStop(0.35, "rgba(120, 170, 255, 0.15)");
-  glow.addColorStop(1, "rgba(120, 170, 255, 0)");
-  ctx.beginPath();
-  ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R + 18, 0, Math.PI * 2);
-  ctx.fillStyle = glow;
-  ctx.fill();
-
   // Ocean: deep blues, lit from the upper left like a real planet
   const ocean = ctx.createRadialGradient(
     GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
   );
-  ocean.addColorStop(0, "#25608f");
-  ocean.addColorStop(0.55, "#0e3a60");
-  ocean.addColorStop(1, "#041a30");
+  ocean.addColorStop(0, "#3a7cb4");
+  ocean.addColorStop(0.55, "#1a5187");
+  ocean.addColorStop(1, "#0b3055");
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
   ctx.fillStyle = ocean;
@@ -288,9 +276,9 @@ function drawGlobe() {
     const land = ctx.createRadialGradient(
       GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
     );
-    land.addColorStop(0, "#5b915d");
-    land.addColorStop(0.55, "#2f6340");
-    land.addColorStop(1, "#123122");
+    land.addColorStop(0, "#6fae71");
+    land.addColorStop(0.55, "#417d51");
+    land.addColorStop(1, "#225034");
     ctx.fillStyle = land;
     ctx.strokeStyle = "rgba(5, 28, 17, 0.6)";
     ctx.lineWidth = 0.6;
@@ -317,9 +305,9 @@ function drawGlobe() {
   );
   shade.addColorStop(0, "rgba(255, 255, 255, 0.12)");
   shade.addColorStop(0.35, "rgba(255, 255, 255, 0)");
-  shade.addColorStop(0.65, "rgba(3, 8, 20, 0.22)");
-  shade.addColorStop(0.88, "rgba(3, 8, 20, 0.5)");
-  shade.addColorStop(1, "rgba(3, 8, 20, 0.78)");
+  shade.addColorStop(0.7, "rgba(3, 8, 20, 0.14)");
+  shade.addColorStop(0.9, "rgba(3, 8, 20, 0.32)");
+  shade.addColorStop(1, "rgba(3, 8, 20, 0.55)");
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
   ctx.fillStyle = shade;
@@ -335,13 +323,6 @@ function drawGlobe() {
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
   ctx.fillStyle = glint;
   ctx.fill();
-
-  // A thin outline around the globe
-  ctx.beginPath();
-  ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(190, 215, 255, 0.2)";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
 
   // A red pin where the user clicked
   if (clickedPoint) {
