@@ -163,7 +163,7 @@ function loadEarthTexture() {
     };
     drawGlobe();
   };
-  img.src = "earth.jpg";
+  img.src = "earth.jpg?v=2"; // bump this if the photo file changes
 }
 
 // Reusable buffers for the photo globe, so we don't allocate new
