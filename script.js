@@ -330,8 +330,8 @@ function drawRing(ring) {
   us, lifting the pen whenever a line slips behind the globe.
 */
 function drawCountryBorders(ctx) {
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
-  ctx.lineWidth = 0.7;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 1.2;
   ctx.beginPath();
 
   function traceRing(ring) {
