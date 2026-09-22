@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Buddy — Plan your trip</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-logo">🧳 Travel Buddy</div>
+    <div class="nav-links">
+      <a href="#explore">Explore</a>
+      <a href="#my-trips">My Trips</a>
+    </div>
+  </nav>
+
+
+  <header class="hero" id="explore">
+    <h1>Your journey starts here.</h1>
+    <p>Weather, destination info, daylight and currency — all in one place.</p>
+    <p class="hero-hint">🌍 Spin the globe, then click where you want to go.</p>
+    <div class="globe-wrap">
+      <canvas id="globe" width="480" height="480"></canvas>
+    </div>
+
+    <!-- Small search bar for typing an exact location -->
+    <form id="search-form" class="mini-search">
+      <input
+        type="text"
+        id="search-input"
+        placeholder="or type a place, e.g. Paris"
+        autocomplete="off"
+      />
+      <button type="submit" aria-label="Search">🔍</button>
+    </form>
+
+    <p id="status-message" class="status-message" hidden></p>
+    <div id="suggestions" class="suggestions" hidden>
+      <p id="suggestions-title" class="suggestions-title"></p>
+      <div id="suggestion-buttons" class="suggestion-buttons"></div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="destination-header" class="destination-header" hidden>
+      <div>
+        <h2 id="destination-city">City</h2>
+        <p id="destination-country">Country</p>
+      </div>
+      <button id="save-button" class="save-button">♡ Save Destination</button>
+    </section>
+    <section id="cards" class="cards" hidden>
+
+      <!-- Weather card (top left) -->
+      <article class="card card-weather">
+        <h3>🌤️ Weather</h3>
+        <div id="weather-content">
+          <p class="muted">Search for a destination to see the weather.</p>
+        </div>
+      </article>
+
+      <!-- Sunrise card (below weather) -->
+      <article class="card card-sun">
+        <h3>🌅 Sunrise &amp; Sunset</h3>
+        <div id="sun-content">
+          <p class="muted">Daylight times will appear here.</p>
+        </div>
+      </article>
+
+      <!-- About card (tall, right column) -->
+      <article class="card card-about">
+        <h3>📍 About the Destination</h3>
+        <div id="wiki-content">
+          <p class="muted">Destination details will appear here.</p>
+        </div>
+      </article>
+
+      <!-- Currency card (tall, middle column) -->
+      <article class="card card-currency">
+        <h3>💱 Currency Converter</h3>
+        <div class="converter">
+          <input type="number" id="amount-input" value="100" min="0" step="any" />
+          <div class="converter-row">
+            <select id="from-currency"></select>
+            <span class="arrow">→</span>
+            <select id="to-currency"></select>
+          </div>
+          <button id="convert-button">Convert</button>
+          <p id="convert-result" class="convert-result"></p>
+        </div>
+      </article>
+
+    </section>
+
+    <!-- ================= THINGS TO EXPLORE ================= -->
+    <section id="explore-section" class="explore-section" hidden>
+      <h3>✨ Things to Explore in <span id="explore-city"></span></h3>
+      <p id="explore-note" class="muted" hidden></p>
+      <div id="explore-grid" class="explore-grid"></div>
+    </section>
+
+    <section id="my-trips" class="saved-section">
+      <h2>❤️ My Trips</h2>
+      <p id="no-saved-message" class="muted">No saved destinations yet. Pick a place on the globe and press "Save Destination".</p>
+      <ul id="saved-list" class="saved-list"></ul>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

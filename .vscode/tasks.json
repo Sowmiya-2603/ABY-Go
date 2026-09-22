@@ -1,0 +1,26 @@
+{
+  // Run these from VS Code: Terminal menu → Run Task...
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Serve Travel Buddy (http://localhost:8765)",
+      "type": "shell",
+      "command": "python3 -m http.server 8765 --directory ${workspaceFolder}",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      }
+    },
+    {
+      "label": "Open Travel Buddy in browser",
+      "type": "shell",
+      "command": "open http://localhost:8765",
+      "problemMatcher": []
+    }
+  ]
+}

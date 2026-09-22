@@ -1,0 +1,597 @@
+/* ============================================================
+   Travel Buddy — Styles
+   A clean, modern, travel-themed look using plain CSS.
+   ============================================================ */
+
+/* ---------- Base & typography ---------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --blue: #3b82f6;
+  --blue-light: #93c5fd;
+  --text: #e8eef9;
+  --text-light: #9fb0cc;
+  /* Cards are dark translucent "glass" panels that match the
+     night-sky background, with a faint light border. */
+  --card-bg: rgba(15, 24, 46, 0.78);
+  --card-border: 1px solid rgba(255, 255, 255, 0.1);
+  --radius: 16px;
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* Anything with the "hidden" attribute must stay hidden,
+   even if another rule gives it display: flex etc. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  /* Night-sky background: almost black at the top, with a soft
+     blue glow rising from the bottom centre. "fixed" keeps it
+     still while the page scrolls. */
+  background: radial-gradient(
+      120% 100% at 50% 115%,
+      #2e4d80 0%,
+      #1a2b4a 40%,
+      #0b1222 70%,
+      #04060c 100%
+    )
+    #04060c fixed no-repeat;
+  line-height: 1.6;
+}
+
+.muted {
+  color: var(--text-light);
+}
+
+/* ---------- Navbar ---------- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  /* See-through dark bar that blurs whatever scrolls behind it */
+  background: rgba(6, 10, 22, 0.75);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nav-logo {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.nav-links a {
+  margin-left: 20px;
+  text-decoration: none;
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.nav-links a:hover {
+  color: #93c5fd;
+}
+
+/* ---------- Hero section ---------- */
+.hero {
+  text-align: center;
+  padding: 70px 20px 60px;
+  /* No background of its own — the night-sky body shows through */
+  color: #ffffff;
+}
+
+.hero h1 {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-bottom: 28px;
+}
+
+/* ---------- Interactive globe ---------- */
+.hero-hint {
+  font-size: 1rem !important;
+  opacity: 0.85;
+}
+
+.globe-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+#globe {
+  /* The canvas is 480x480 pixels inside, but CSS scales it
+     down on small screens so it always fits. */
+  width: min(420px, 88vw);
+  height: auto;
+  cursor: grab;
+  touch-action: none; /* let us handle touch drags ourselves */
+}
+
+#globe:active {
+  cursor: grabbing;
+}
+
+/* ---------- Nearby place suggestions ---------- */
+.suggestions {
+  margin-top: 18px;
+}
+
+.suggestions-title {
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.suggestion-buttons {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.suggestion-buttons button {
+  padding: 10px 18px;
+  border: var(--card-border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--blue-light);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.suggestion-buttons button:hover {
+  background: rgba(59, 130, 246, 0.25);
+  transform: translateY(-2px);
+}
+
+.suggestion-buttons button small {
+  display: block;
+  font-weight: 400;
+  color: var(--text-light);
+  font-size: 0.75rem;
+}
+
+/* ---------- Small "exact location" search bar ---------- */
+.mini-search {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mini-search input {
+  width: min(280px, 70vw);
+  padding: 9px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.mini-search input::placeholder {
+  color: rgba(232, 238, 249, 0.5);
+}
+
+.mini-search input:focus {
+  border-color: var(--blue-light);
+}
+
+.mini-search button {
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.mini-search button:hover {
+  background: rgba(59, 130, 246, 0.35);
+}
+
+.status-message {
+  margin-top: 18px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.15);
+  display: inline-block;
+  padding: 8px 18px;
+  border-radius: 999px;
+}
+
+/* ---------- Main container ---------- */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+/* ---------- Destination header ---------- */
+.destination-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+/* This heading sits directly on the dark background */
+.destination-header h2 {
+  font-size: 2rem;
+  color: #ffffff;
+}
+
+.destination-header p {
+  color: #b6c2d9;
+}
+
+.save-button {
+  padding: 10px 20px;
+  border: 2px solid var(--blue);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--blue-light);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.save-button:hover {
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.save-button.saved {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+/* ---------- Cards grid ----------
+   Layout (from the sketch):
+   - left column:  Weather on top, Sunrise & Sunset below it
+   - middle:       Currency Converter (tall)
+   - right:        About the Destination (tall, a little wider)
+   Each card is placed by name using grid-template-areas. */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  grid-template-areas:
+    "weather currency about"
+    "sun     currency about";
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.card-weather  { grid-area: weather; }
+.card-sun      { grid-area: sun; }
+.card-currency { grid-area: currency; }
+.card-about    { grid-area: about; }
+
+/* Medium screens: two columns */
+@media (max-width: 900px) {
+  .cards {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "weather  sun"
+      "currency about";
+  }
+}
+
+/* Small screens: one simple stack */
+@media (max-width: 600px) {
+  .cards {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "weather"
+      "sun"
+      "currency"
+      "about";
+  }
+}
+
+.card {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(147, 197, 253, 0.35);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+}
+
+.card h3 {
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+/* Weather details */
+.weather-temp {
+  font-size: 2.4rem;
+  font-weight: 700;
+}
+
+.weather-icon {
+  font-size: 2.4rem;
+}
+
+.weather-detail {
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.forecast {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 10px;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+
+/* Sunrise & sunset */
+.sun-times p {
+  font-size: 1.1rem;
+  margin: 6px 0;
+}
+
+/* Wikipedia card */
+.wiki-image {
+  width: 100%;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  max-height: 180px;
+  object-fit: cover;
+}
+
+.wiki-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--blue-light);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wiki-link:hover {
+  text-decoration: underline;
+}
+
+/* Currency converter */
+.converter input,
+.converter select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  color-scheme: dark; /* dark-styled date/select/number controls */
+}
+
+.converter select option {
+  background: #101b33; /* dropdown list stays dark too */
+  color: var(--text);
+}
+
+.converter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.converter-row .arrow {
+  margin-bottom: 10px;
+  color: var(--text-light);
+}
+
+.converter button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.converter button:hover {
+  background: #2563eb;
+}
+
+.convert-result {
+  margin-top: 10px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- Things to explore (AI suggestions) ---------- */
+.explore-section {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  margin-top: 28px;
+}
+
+.explore-section h3 {
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  color: #ffffff;
+}
+
+.explore-section .muted a {
+  color: var(--blue-light);
+}
+
+/* Four categories per row on desktop; a fifth wraps below */
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  align-items: start; /* columns start at the same top line */
+}
+
+/* Two per row on tablets, one per row on phones */
+@media (max-width: 900px) {
+  .explore-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .explore-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.explore-category h4 {
+  font-size: 1rem;
+  color: var(--blue-light);
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  padding-bottom: 6px;
+}
+
+.explore-category ul {
+  list-style: none;
+}
+
+.explore-category li {
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+}
+
+.explore-category li small {
+  display: block;
+  color: var(--text-light);
+}
+
+/* Place names that link to their Wikipedia article */
+.explore-link {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.explore-link:hover {
+  color: var(--blue-light);
+  text-decoration: underline;
+}
+
+/* ---------- Saved destinations ---------- */
+.saved-section {
+  margin-top: 32px;
+}
+
+/* These sit directly on the dark background */
+.saved-section h2 {
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.saved-section .muted {
+  color: #b6c2d9;
+}
+
+.saved-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.saved-list li {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  padding: 10px 8px 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s ease;
+}
+
+.saved-list li:hover {
+  transform: translateY(-2px);
+}
+
+.saved-list .trip-name {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.saved-list .trip-name:hover {
+  color: var(--blue-light);
+}
+
+.saved-list .remove-trip {
+  background: rgba(239, 68, 68, 0.18);
+  border: none;
+  color: #fca5a5;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.saved-list .remove-trip:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  text-align: center;
+  padding: 24px 16px;
+  color: #8fa0bd;
+  font-size: 0.9rem;
+}
+
+/* ---------- Mobile tweaks ---------- */
+@media (max-width: 600px) {
+  .hero h1 {
+    font-size: 1.7rem;
+  }
+
+  .destination-header h2 {
+    font-size: 1.5rem;
+  }
+}
