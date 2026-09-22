@@ -1,8 +1,33 @@
+/* ------------------------------------------------------------
+   CRASH REPORTER
+   If any JavaScript error slips through, show it in a red banner
+   at the top of the page instead of freezing silently — so you
+   always know WHAT broke and WHERE.
+   ------------------------------------------------------------ */
+window.addEventListener("error", function (event) {
+  const banner = document.createElement("div");
+  banner.style.cssText =
+    "position:fixed; top:0; left:0; right:0; z-index:9999;" +
+    "background:#b91c1c; color:#fff; padding:10px 16px;" +
+    "font:13px monospace; white-space:pre-wrap;";
+  banner.textContent =
+    "⚠️ JavaScript error: " + event.message +
+    "  (" + (event.filename || "").split("/").pop() + ":" + event.lineno + ")" +
+    "\nTry a hard refresh: Cmd+Shift+R";
+  document.body.appendChild(banner);
+});
 
 const globeCanvas = document.getElementById("globe");
 const globeCtx = globeCanvas.getContext("2d");
 
 const statusMessage = document.getElementById("status-message");
+const navBackButton = document.getElementById("nav-back");
+const heroTitle = document.getElementById("hero-title");
+const heroSubtitle = document.getElementById("hero-subtitle");
+const heroHint = document.getElementById("hero-hint");
+const planeOverlay = document.getElementById("plane-overlay");
+const planeElement = document.getElementById("plane");
+
 const searchForm = document.getElementById("search-form");
 const searchInput = document.getElementById("search-input");
 const suggestionsBox = document.getElementById("suggestions");
@@ -25,6 +50,12 @@ const toCurrency = document.getElementById("to-currency");
 const convertButton = document.getElementById("convert-button");
 const convertResult = document.getElementById("convert-result");
 
+const emergencyContent = document.getElementById("emergency-content");
+const timezoneContent = document.getElementById("timezone-content");
+const distanceContent = document.getElementById("distance-content");
+const homeInput = document.getElementById("home-input");
+const homeButton = document.getElementById("home-button");
+
 const exploreSection = document.getElementById("explore-section");
 const exploreCity = document.getElementById("explore-city");
 const exploreGrid = document.getElementById("explore-grid");
@@ -33,8 +64,49 @@ const exploreNote = document.getElementById("explore-note");
 const savedList = document.getElementById("saved-list");
 const noSavedMessage = document.getElementById("no-saved-message");
 
+// The app has two steps: first the user picks WHERE THEY ARE
+// (their home), then WHERE THEY WANT TO GO. If a home is already
+// remembered from a past visit, we skip straight to exploring.
+let pickingHome = true;
+
+/* Swap the hero text to match the current step */
+function applyStageText() {
+  // The Back button only makes sense on the second step.
+  // (The "if" guard keeps an old cached page from crashing here.)
+  if (navBackButton) navBackButton.hidden = pickingHome;
+  if (pickingHome) {
+    heroTitle.textContent = "Where are you now?";
+    heroSubtitle.textContent = "First, set your starting point.";
+    heroHint.textContent =
+      "🌍 Spin the globe and click your home, or type it below.";
+    searchInput.placeholder = "type your city, e.g. Chennai";
+  } else {
+    heroTitle.textContent = "Where do you plan to explore?";
+    heroSubtitle.textContent =
+      "Weather, destination info, daylight and currency, all in one place.";
+    heroHint.textContent =
+      "🌍 Spin the globe, then click where you want to go.";
+    searchInput.placeholder = "or type a place, e.g. Paris";
+  }
+}
+
 // The destination the user is currently looking at
 let currentDestination = null;
+
+/* The Back button: return to the "Where are you now?" step and
+   clear the destination view. */
+if (navBackButton) navBackButton.addEventListener("click", function () {
+  pickingHome = true;
+  currentDestination = null; // any in-flight answers get ignored
+  destinationHeader.hidden = true;
+  cardsSection.hidden = true;
+  exploreSection.hidden = true;
+  hideStatus();
+  suggestionsBox.hidden = true;
+  searchInput.value = "";
+  applyStageText();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 // The point (latitude/longitude) the user last clicked on the globe
 let clickedPoint = null;
@@ -60,9 +132,10 @@ function hideStatus() {
    ------------------------------------------------------------ */
 
 // Where the globe is drawn on the canvas
-const GLOBE_CX = 240;   // centre x
-const GLOBE_CY = 240;   // centre y
-const GLOBE_R = 215;    // radius in pixels
+const GLOBE_SIZE = 640; // the canvas is 640x640 pixels inside
+const GLOBE_CX = 320;   // centre x
+const GLOBE_CY = 320;   // centre y
+const GLOBE_R = 290;    // radius in pixels
 
 // How the globe is currently rotated (in degrees)
 let rotationLon = -80;  // which longitude faces us
@@ -166,7 +239,7 @@ function drawRing(ring) {
 // Draw the whole globe: ocean, grid lines, countries, marker
 function drawGlobe() {
   const ctx = globeCtx;
-  ctx.clearRect(0, 0, 480, 480);
+  ctx.clearRect(0, 0, GLOBE_SIZE, GLOBE_SIZE);
 
   // Ocean (a soft blue circle with a little shading)
   const ocean = ctx.createRadialGradient(
@@ -289,8 +362,8 @@ let dragLast = null;  // where the pointer was last frame
 function canvasPosition(event) {
   const rect = globeCanvas.getBoundingClientRect();
   return {
-    x: (event.clientX - rect.left) * (480 / rect.width),
-    y: (event.clientY - rect.top) * (480 / rect.height),
+    x: (event.clientX - rect.left) * (GLOBE_SIZE / rect.width),
+    y: (event.clientY - rect.top) * (GLOBE_SIZE / rect.height),
   };
 }
 
@@ -419,8 +492,9 @@ async function findNearbyPlaces(lat, lon) {
 
     // Show the suggestions as clickable buttons
     hideStatus();
-    suggestionsTitle.textContent =
-      "🎯 Places near where you clicked — pick the most precise one:";
+    suggestionsTitle.textContent = pickingHome
+      ? "🏠 Places near where you clicked. Pick where you are:"
+      : "🎯 Places near where you clicked. Pick the most precise one:";
     suggestionButtons.innerHTML = "";
     for (const s of suggestions.slice(0, 7)) {
       const button = document.createElement("button");
@@ -496,7 +570,7 @@ async function choosePlace(name) {
       return;
     }
 
-    await showDestination(destination);
+    await handleChosenPlace(destination);
   } catch (error) {
     showStatus("⚠️ Something went wrong. Please check your connection and try again.");
   }
@@ -513,10 +587,17 @@ async function searchDestination(cityName) {
     const data = await response.json();
 
     if (!data.results || data.results.length === 0) {
-      showStatus("😕 Sorry, we couldn't find \"" + cityName + "\".");
+      // Not a city? Try the geocoder that knows states and regions
+      const options = await searchNominatim(cityName);
+      if (options.length === 0) {
+        showStatus("😕 Sorry, we couldn't find \"" + cityName + "\".");
+        return;
+      }
+      pointGlobeAt(options[0].dest.latitude, options[0].dest.longitude);
+      await handleChosenPlace(options[0].dest);
       return;
     }
-    await showDestination(placeToDestination(data.results[0]));
+    await handleChosenPlace(placeToDestination(data.results[0]));
   } catch (error) {
     showStatus("⚠️ Something went wrong. Please check your connection and try again.");
   }
@@ -567,45 +648,59 @@ async function searchExactLocation(name) {
   showStatus("🔎 Searching for \"" + name + "\"...");
 
   try {
-    // Ask the geocoder for up to 5 places with this name
+    // First ask Open-Meteo's geocoder — fast and great for cities.
+    // Each option is {dest, label}: the place, and a small line
+    // saying where it is.
     const url =
       "https://geocoding-api.open-meteo.com/v1/search?count=5&name=" +
       encodeURIComponent(name);
     const response = await fetch(url);
     const data = await response.json();
+    let options = (data.results || []).map(function (place) {
+      return {
+        dest: placeToDestination(place),
+        label: [place.admin1, place.country].filter(Boolean).join(", ") || "Location",
+      };
+    });
 
-    if (!data.results || data.results.length === 0) {
+    // Open-Meteo only knows cities and towns. If it found nothing
+    // (e.g. "Tamil Nadu" or "Provence"), ask OpenStreetMap's
+    // geocoder, which understands states, districts and regions.
+    if (options.length === 0) {
+      options = await searchNominatim(name);
+    }
+
+    if (options.length === 0) {
       showStatus("😕 Sorry, we couldn't find \"" + name + "\". Try another spelling!");
       return;
     }
 
+    // Choosing an option points the globe there and loads it
+    function chooseOption(option) {
+      suggestionsBox.hidden = true;
+      pointGlobeAt(option.dest.latitude, option.dest.longitude);
+      handleChosenPlace(option.dest);
+    }
+
     // Exactly one match — go straight there
-    if (data.results.length === 1) {
-      const place = data.results[0];
-      pointGlobeAt(place.latitude, place.longitude);
-      await showDestination(placeToDestination(place));
+    if (options.length === 1) {
+      chooseOption(options[0]);
       return;
     }
 
     // Several places share this name (Paris, France vs Paris,
     // Texas...) — let the user pick the exact one.
     hideStatus();
-    suggestionsTitle.textContent = "🎯 Several places match — pick the exact one:";
+    suggestionsTitle.textContent = "🎯 Several places match. Pick the exact one:";
     suggestionButtons.innerHTML = "";
-    for (const place of data.results) {
-      const region = [place.admin1, place.country]
-        .filter(Boolean)
-        .join(", ");
+    for (const option of options) {
       const button = document.createElement("button");
-      button.innerHTML = "";
-      button.append(place.name);
+      button.append(option.dest.name);
       const small = document.createElement("small");
-      small.textContent = region || "—";
+      small.textContent = option.label;
       button.appendChild(small);
       button.addEventListener("click", function () {
-        suggestionsBox.hidden = true;
-        pointGlobeAt(place.latitude, place.longitude);
-        showDestination(placeToDestination(place));
+        chooseOption(option);
       });
       suggestionButtons.appendChild(button);
     }
@@ -613,6 +708,359 @@ async function searchExactLocation(name) {
   } catch (error) {
     showStatus("⚠️ Something went wrong. Please check your connection and try again.");
   }
+}
+
+// Ask OpenStreetMap's "Nominatim" geocoder (free, no key). Unlike
+// Open-Meteo it also knows states, districts and regions.
+async function searchNominatim(name) {
+  const url =
+    "https://nominatim.openstreetmap.org/search" +
+    "?q=" + encodeURIComponent(name) +
+    "&format=jsonv2&limit=5&addressdetails=1&accept-language=en";
+
+  const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
+  if (!response.ok) return [];
+  const results = await response.json();
+
+  return results.map(function (r) {
+    const address = r.address || {};
+
+    // What kind of place is it? (used by "Things to Explore")
+    let kind = "place";
+    if (r.addresstype === "country") kind = "country";
+    else if (["state", "region", "county", "district", "province",
+      "state_district", "municipality"].indexOf(r.addresstype) !== -1) {
+      kind = "region";
+    }
+
+    return {
+      dest: {
+        name: r.name || name,
+        country: address.country || "",
+        countryCode: (address.country_code || "").toUpperCase(),
+        latitude: parseFloat(r.lat),
+        longitude: parseFloat(r.lon),
+        timezone: "", // the weather API will tell us this
+        kind: kind,
+      },
+      label: prettifyTag(r.addresstype || "place") +
+        (address.country ? " · " + address.country : ""),
+    };
+  });
+}
+
+/* Every way of picking a place (globe click, search bar, saved
+   trip) lands here. During step 1 the chosen place becomes the
+   user's HOME; afterwards it is a travel destination. */
+async function handleChosenPlace(destination) {
+  if (pickingHome) {
+    finishHomeSetup(destination);
+  } else {
+    await showDestination(destination);
+  }
+}
+
+// Step 1 complete: remember home, play the plane transition,
+// then switch the page into "explore" mode.
+function finishHomeSetup(destination) {
+  localStorage.setItem("travelBuddyHome", JSON.stringify({
+    name: destination.name,
+    country: destination.country,
+    latitude: destination.latitude,
+    longitude: destination.longitude,
+  }));
+  homeInput.value = destination.name;
+
+  hideStatus();
+  suggestionsBox.hidden = true;
+  pickingHome = false;
+
+  playPlaneTransition();
+}
+
+/* ------------------------------------------------------------
+   THE PAGE-SWIPE TRANSITION
+   The plane sweeps across the screen like a windscreen wiper:
+   ahead of it (white side of the video) the real FIRST page is
+   still there; behind it the real SECOND page is revealed.
+
+   The trick that makes it perfectly smooth: the plane picture is
+   cut out of the video ONCE, then the sweep is just one gliding
+   element plus a clip that follows it — no video decoding and no
+   pixel work during the animation at all.
+   ------------------------------------------------------------ */
+
+// Which video pixels are background (not the plane)?
+//  - anything cool (blue >= red): the white & gray backgrounds
+//  - near-white: compression noise like (255, 252, 249)
+//  - dark pixels: the dashed flight-path line in the video
+function isVideoBackground(r, g, b) {
+  return (
+    b >= r - 2 ||
+    (r > 245 && g > 245 && b > 245) ||
+    (r < 100 && g < 100 && b < 100)
+  );
+}
+
+// Cut the plane out of the video into a transparent image.
+// Done once, then remembered.
+let planeSprite = null;
+async function getPlaneSprite() {
+  if (planeSprite) return planeSprite;
+
+  const video = document.getElementById("plane-video");
+  if (!video.videoWidth) {
+    await new Promise(function (resolve, reject) {
+      video.onloadeddata = resolve;
+      video.onerror = reject;
+    });
+  }
+
+  // Jump to a frame where the whole plane is on screen
+  video.currentTime = 0.62;
+  await new Promise(function (resolve) { video.onseeked = resolve; });
+
+  // Draw the frame small, then remove the background with a
+  // "flood fill" from the picture's borders: like pouring water in
+  // from every edge, it erases all background it can flow into —
+  // even the pockets between the wings and the body — but it can
+  // never reach the shiny white spots INSIDE the plane's outline,
+  // so those stay untouched.
+  const W = 960, H = 540;
+  const work = document.createElement("canvas");
+  work.width = W;
+  work.height = H;
+  const ctx = work.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, W, H);
+  const frame = ctx.getImageData(0, 0, W, H);
+  const px = frame.data;
+
+  const visited = new Uint8Array(W * H);
+  const queue = [];
+
+  function pour(p) {
+    if (visited[p]) return;
+    const i = p * 4;
+    if (!isVideoBackground(px[i], px[i + 1], px[i + 2])) return;
+    visited[p] = 1;
+    px[i + 3] = 0; // erase this background pixel
+    queue.push(p);
+  }
+
+  // Start pouring from every border pixel...
+  for (let x = 0; x < W; x++) { pour(x); pour((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { pour(y * W); pour(y * W + W - 1); }
+
+  // ...and let it spread to the neighbours, over and over
+  while (queue.length > 0) {
+    const p = queue.pop();
+    const x = p % W;
+    if (x > 0) pour(p - 1);
+    if (x < W - 1) pour(p + 1);
+    if (p >= W) pour(p - W);
+    if (p < W * (H - 1)) pour(p + W);
+  }
+
+  // Clean-up pass: the dashed flight-path line leaves small
+  // leftover blobs. Group the visible pixels into connected
+  // "islands" and erase every island smaller than 80 pixels —
+  // only the plane itself is big enough to survive.
+  const island = new Int32Array(W * H); // 0 = not labelled yet
+  let islandId = 0;
+  for (let start = 0; start < W * H; start++) {
+    if (px[start * 4 + 3] === 0 || island[start] !== 0) continue;
+
+    // Collect this whole island
+    islandId++;
+    const members = [start];
+    island[start] = islandId;
+    for (let k = 0; k < members.length; k++) {
+      const p = members[k];
+      const x = p % W;
+      const around = [];
+      if (x > 0) around.push(p - 1);
+      if (x < W - 1) around.push(p + 1);
+      if (p >= W) around.push(p - W);
+      if (p < W * (H - 1)) around.push(p + W);
+      for (const n of around) {
+        if (px[n * 4 + 3] > 0 && island[n] === 0) {
+          island[n] = islandId;
+          members.push(n);
+        }
+      }
+    }
+
+    // Tiny island? Erase it.
+    if (members.length < 80) {
+      for (const p of members) px[p * 4 + 3] = 0;
+    }
+  }
+
+  // Find the box around what is left (the plane)
+  let top = H, bottom = 0, leftMost = W, rightMost = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (px[(y * W + x) * 4 + 3] > 0) {
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
+        if (x < leftMost) leftMost = x;
+        if (x > rightMost) rightMost = x;
+      }
+    }
+  }
+  if (rightMost <= leftMost) throw new Error("no plane found in video");
+  ctx.putImageData(frame, 0, 0);
+
+  // Crop tightly around the plane
+  const sw = rightMost - leftMost + 1;
+  const sh = bottom - top + 1;
+  const sprite = document.createElement("canvas");
+  sprite.width = sw;
+  sprite.height = sh;
+  sprite.getContext("2d").drawImage(work, leftMost, top, sw, sh, 0, 0, sw, sh);
+
+  planeSprite = { canvas: sprite, heightShare: sh / H, topShare: top / H };
+  return planeSprite;
+}
+
+// A gentle speed curve: slow start, fast middle, soft landing
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function playPlaneTransition() {
+  planeOverlay.hidden = false;
+  window.scrollTo(0, 0); // the sweep happens over the hero
+
+  // ---- Build the "second page" preview layer ----
+  // A copy of the hero with the step-2 words already in place.
+  const hero = document.querySelector(".hero");
+  const heroRect = hero.getBoundingClientRect();
+  const preview = document.createElement("div");
+  // The preview needs the page's own night-sky background so it
+  // fully covers the step-1 words underneath the revealed part.
+  preview.style.cssText =
+    "position:absolute; inset:0; clip-path:inset(0 100% 0 0);" +
+    "background: radial-gradient(120% 100% at 50% 115%," +
+    " #2e4d80 0%, #1a2b4a 40%, #0b1222 70%, #04060c 100%) #04060c;";
+
+  // The navbar looks the same on both steps — copy it so it does
+  // not vanish behind the preview's background.
+  const navCopy = document.querySelector(".navbar").cloneNode(true);
+  navCopy.style.cssText = "position:absolute; top:0; left:0; right:0;";
+  preview.appendChild(navCopy);
+
+  const heroCopy = hero.cloneNode(true);
+  heroCopy.querySelector("#hero-title").textContent =
+    "Where do you plan to explore?";
+  heroCopy.querySelector("#hero-subtitle").textContent =
+    "Weather, destination info, daylight and currency, all in one place.";
+  heroCopy.querySelector("#hero-hint").textContent =
+    "🌍 Spin the globe, then click where you want to go.";
+  heroCopy.querySelector("#search-input").value = "";
+  heroCopy.querySelector("#search-input").placeholder =
+    "or type a place, e.g. Paris";
+  heroCopy.querySelector("#status-message").hidden = true;
+  heroCopy.querySelector("#suggestions").hidden = true;
+  const globeCopy = heroCopy.querySelector("#globe");
+
+  // Two elements must never share an id — strip them off the copy
+  heroCopy.removeAttribute("id");
+  heroCopy.querySelectorAll("[id]").forEach(function (el) {
+    el.removeAttribute("id");
+  });
+
+  // Pin the copy exactly over the real hero
+  heroCopy.style.cssText =
+    "position:absolute; top:" + heroRect.top + "px; left:" + heroRect.left +
+    "px; width:" + heroRect.width + "px;";
+
+  // The clone lost its ids, so the "#globe" size rule no longer
+  // applies to it — give it the real globe's size directly, so the
+  // globe stays EXACTLY the same size and place during the sweep.
+  const globeRect = globeCanvas.getBoundingClientRect();
+  globeCopy.style.width = globeRect.width + "px";
+  globeCopy.style.height = globeRect.height + "px";
+
+  preview.appendChild(heroCopy);
+  planeOverlay.appendChild(preview);
+
+  // A cloned <canvas> starts blank — repaint the globe onto it
+  globeCopy.getContext("2d").drawImage(globeCanvas, 0, 0);
+
+  let finished = false;
+
+  // Completely done: make the real page step 2 and clean up
+  function endTransition(spriteEl) {
+    if (finished) return;
+    finished = true;
+    applyStageText();
+    preview.remove();
+    if (spriteEl) spriteEl.remove();
+    planeElement.hidden = true; // in case the emoji backup ran
+    planeOverlay.hidden = true;
+  }
+
+  // Backup plan: no usable video? Fly the ✈️ emoji instead.
+  function useEmojiInstead() {
+    preview.style.clipPath = "inset(0 0 0 0)"; // show page 2 fully
+    planeElement.hidden = false;
+    planeElement.style.animation = "none";
+    void planeElement.offsetWidth; // restart the CSS animation
+    planeElement.style.animation = "";
+    setTimeout(function () { endTransition(null); }, 2600);
+  }
+
+  // ---- The sweep itself ----
+  getPlaneSprite().then(function (sprite) {
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+
+    // Size the plane like it appears in the video (same share of
+    // the screen height, same vertical position)
+    const planeH = sprite.heightShare * screenH;
+    const planeW = planeH * (sprite.canvas.width / sprite.canvas.height);
+    const spriteEl = sprite.canvas;
+    spriteEl.style.cssText =
+      "position:absolute; left:0; top:" + (sprite.topShare * screenH) + "px;" +
+      "height:" + planeH + "px; width:" + planeW + "px;" +
+      "will-change: transform;";
+    spriteEl.style.transform = "translateX(" + (-planeW) + "px)";
+    planeOverlay.appendChild(spriteEl);
+
+    // One shared timeline drives the plane AND the reveal, so the
+    // page-2 edge is always exactly at the plane's nose.
+    const DURATION = 1700; // milliseconds
+    const startedAt = performance.now();
+
+    function tick(now) {
+      if (finished) return;
+      const progress = Math.min(1, (now - startedAt) / DURATION);
+      const eased = easeInOutCubic(progress);
+
+      // The nose travels from the left edge right off the screen
+      const nose = eased * (screenW + planeW);
+      spriteEl.style.transform =
+        "translateX(" + (nose - planeW) + "px)";
+
+      const revealPercent = Math.min(100, (nose / screenW) * 100);
+      preview.style.clipPath =
+        "inset(0 " + (100 - revealPercent) + "% 0 0)";
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        endTransition(spriteEl);
+      }
+    }
+    requestAnimationFrame(tick);
+
+    // Guaranteed landing, even if animation frames get throttled
+    setTimeout(function () { endTransition(spriteEl); }, DURATION + 200);
+  }).catch(useEmojiInstead);
+
+  // Safety net: never leave the user stuck on the overlay
+  setTimeout(function () { endTransition(null); }, 6000);
 }
 
 // Shared by both flows above: show the header, then fill every card
@@ -637,7 +1085,14 @@ async function showDestination(destination) {
   // Weather first — its reply also tells us the local timezone,
   // which the sunrise/sunset card needs.
   await loadWeather();
-  await Promise.all([loadSunTimes(), loadWikipedia(), loadThingsToDo()]);
+  await Promise.all([
+    loadSunTimes(),
+    loadWikipedia(),
+    loadThingsToDo(),
+    loadTimeDifference(),
+    loadDistance(),
+    loadEmergencyNumbers(),
+  ]);
 }
 
 /* ------------------------------------------------------------
@@ -981,10 +1436,19 @@ async function loadThingsToDo() {
       }
     }
 
+    // Thin result? Never leave the section empty — top it up with
+    // a broader search for the area's famous spots.
+    let total = 0;
+    for (const c of categories) total += ideas[c.key].length;
+    if (total < 4) {
+      await topUpWithFamousSpots(destination, ideas, categories);
+      if (destination !== currentDestination) return;
+    }
+
     const foundAnything = categories.some((c) => ideas[c.key].length > 0);
     if (!foundAnything) {
       exploreNote.textContent =
-        "🗺️ No places found for this area — try a nearby city instead.";
+        "🗺️ No places found for this area. Try a nearby city instead.";
       return;
     }
 
@@ -998,11 +1462,89 @@ async function loadThingsToDo() {
   }
 }
 
+// Turn "Ariyalūr" into "ariyalur": lowercase and without accent
+// marks, so names from different sources can be compared.
+function simplifyName(text) {
+  return String(text)
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
+/* When the local lookup finds little (small towns, remote areas),
+   search Wikipedia more broadly for the area's famous spots and
+   fill the categories with them. A spot that fits no category
+   goes to Tourist Spots, the catch-all. */
+// Words that make a Wikipedia description sound like a PLACE a
+// traveller could visit (used to filter out railway lines, films,
+// companies and other non-places).
+const PLACE_WORDS = ["temple", "fort", "palace", "beach", "falls",
+  "waterfall", "dam", "town", "city", "village", "museum", "park",
+  "hill", "lake", "sanctuary", "reserve", "monument", "church",
+  "mosque", "shrine", "island", "cave", "garden", "zoo", "bridge",
+  "tower", "valley", "river", "mountain", "basilica", "cathedral",
+  "attraction", "landmark", "memorial", "ruins", "site"];
+
+async function topUpWithFamousSpots(destination, ideas, categories) {
+  try {
+    const plainName = simplifyName(destination.name);
+    const where =
+      plainName + (destination.country ? " " + destination.country : "");
+
+    // Two broad searches, run together
+    const searches = await Promise.allSettled([
+      searchWikipedia('"' + plainName + '" famous places to visit tourist attractions'),
+      searchWikipedia(where + " temples forts palaces beaches waterfalls attractions"),
+    ]);
+    let pages = [];
+    for (const s of searches) {
+      if (s.status === "fulfilled") pages = pages.concat(s.value);
+    }
+
+    // Names we already show, across all categories
+    const seenNames = [destination.name];
+    for (const c of categories) {
+      for (const item of ideas[c.key]) seenNames.push(item.name);
+    }
+
+    for (const page of pages) {
+      if (isNoisePage(page) || seenNames.includes(page.title)) continue;
+
+      // Keep only things that SOUND like places to visit
+      const description = page.description.toLowerCase();
+      const soundsLikeAPlace = PLACE_WORDS.some(function (word) {
+        return description.includes(word);
+      });
+      if (!soundsLikeAPlace) continue;
+
+      // Put it in the first category its description fits;
+      // no fit at all → Tourist Spots
+      let target = categories.find((c) =>
+        (c.keywords || []).some((k) => description.includes(k))
+      );
+      if (!target) {
+        target = categories.find((c) => c.key === "touristSpots") ||
+          categories[0];
+      }
+
+      if (ideas[target.key].length >= target.max) continue;
+      ideas[target.key].push({
+        name: page.title,
+        why: page.description,
+        url: "https://en.wikipedia.org/wiki/" + encodeURIComponent(page.title),
+      });
+      seenNames.push(page.title);
+    }
+  } catch (error) {
+    // The top-up is best-effort — whatever we already have still shows
+  }
+}
+
 /* ---- Wide areas: search Wikipedia for the area's highlights ---- */
 async function fetchRegionHighlights(destination) {
   // Quoting the area name ("Karnataka") makes it a REQUIRED word
   // in the search; adding the country makes regions more precise.
-  const quotedName = '"' + destination.name + '"';
+  const quotedName = '"' + simplifyName(destination.name) + '"';
   const countryHint =
     destination.kind === "country" ? "" : " " + (destination.country || "");
 
@@ -1041,8 +1583,8 @@ async function fetchRegionHighlights(destination) {
       // ...AND that actually mention the area — the search can
       // rank a famous temple in the wrong country highly, but a
       // real match says e.g. "in Karnataka" or "in France".
-      const text = (page.title + " " + page.description).toLowerCase();
-      if (!text.includes(destination.name.toLowerCase())) continue;
+      const text = simplifyName(page.title + " " + page.description);
+      if (!text.includes(simplifyName(destination.name))) continue;
 
       ideas[category.key].push({
         name: page.title,
@@ -1259,6 +1801,311 @@ function renderThingsToDo(ideas, categories) {
 }
 
 /* ------------------------------------------------------------
+   7c. TIME ZONES & DISTANCE (timeapi.io + a little math)
+   The user tells us where THEY are ("home"). We remember it in
+   localStorage, then:
+    - the Time Zones card compares the clocks at home and at the
+      destination using https://timeapi.io (free, no key)
+    - the Distance card measures how far away the destination is
+      and estimates travel time by plane, train, car and ship
+   ------------------------------------------------------------ */
+
+// Read / save the home location (localStorage stores text only)
+function getHomeLocation() {
+  const stored = localStorage.getItem("travelBuddyHome");
+  return stored ? JSON.parse(stored) : null;
+}
+
+// The user typed where they are — find it and remember it
+homeButton.addEventListener("click", setHomeLocation);
+homeInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") setHomeLocation();
+});
+
+async function setHomeLocation() {
+  const name = homeInput.value.trim();
+  if (name === "") return;
+
+  timezoneContent.innerHTML = "<p class='muted'>Finding " + name + "...</p>";
+
+  try {
+    const url =
+      "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" +
+      encodeURIComponent(name);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      timezoneContent.innerHTML =
+        "<p class='muted'>😕 Couldn't find \"" + name + "\". Try a nearby city.</p>";
+      return;
+    }
+
+    const place = data.results[0];
+    localStorage.setItem("travelBuddyHome", JSON.stringify({
+      name: place.name,
+      country: place.country || "",
+      latitude: place.latitude,
+      longitude: place.longitude,
+    }));
+    homeInput.value = place.name;
+
+    // Refresh both cards for the destination on screen (if any)
+    if (currentDestination) {
+      loadTimeDifference();
+      loadDistance();
+    } else {
+      timezoneContent.innerHTML =
+        "<p class='muted'>✅ Saved! Pick a destination to compare times.</p>";
+    }
+  } catch (error) {
+    timezoneContent.innerHTML =
+      "<p class='muted'>⚠️ Could not look that up right now.</p>";
+  }
+}
+
+/* ---- Card: time zone difference ---- */
+async function loadTimeDifference() {
+  const destination = currentDestination;
+  const home = getHomeLocation();
+
+  if (!home) {
+    timezoneContent.innerHTML =
+      "<p class='muted'>Tell us where you are to compare times.</p>";
+    return;
+  }
+
+  timezoneContent.innerHTML = "<p class='muted'>Checking the clocks...</p>";
+
+  try {
+    // Ask timeapi.io for the current time at both places.
+    // It works from coordinates — no timezone names needed.
+    function timeUrl(place) {
+      return "https://timeapi.io/api/time/current/coordinate" +
+        "?latitude=" + place.latitude + "&longitude=" + place.longitude;
+    }
+    const [homeTime, destTime] = await Promise.all([
+      fetch(timeUrl(home), { signal: AbortSignal.timeout(12000) }).then(r => r.json()),
+      fetch(timeUrl(destination), { signal: AbortSignal.timeout(12000) }).then(r => r.json()),
+    ]);
+
+    // The user moved on to another place? Ignore this answer.
+    if (destination !== currentDestination) return;
+
+    // Compare the two local clocks, in minutes
+    const diffMinutes = Math.round(
+      (new Date(destTime.dateTime) - new Date(homeTime.dateTime)) / 60000
+    );
+    const hours = Math.floor(Math.abs(diffMinutes) / 60);
+    const minutes = Math.abs(diffMinutes) % 60;
+    let diffText;
+    if (diffMinutes === 0) {
+      diffText = "🕐 Same time as " + home.name + "!";
+    } else {
+      diffText =
+        "🕐 " + destination.name + " is " + hours + "h" +
+        (minutes ? " " + minutes + "m" : "") +
+        (diffMinutes > 0 ? " ahead of " : " behind ") +
+        (diffMinutes > 0 ? home.name : home.name);
+    }
+
+    timezoneContent.innerHTML =
+      "<div class='tz-row'><span>🏠 " + home.name + "</span>" +
+      "<span class='tz-time'>" + homeTime.time + "</span></div>" +
+      "<div class='tz-row'><span>📍 " + destination.name + "</span>" +
+      "<span class='tz-time'>" + destTime.time + "</span></div>" +
+      "<p class='tz-diff'>" + diffText + "</p>";
+  } catch (error) {
+    if (destination !== currentDestination) return;
+    timezoneContent.innerHTML =
+      "<p class='muted'>⚠️ Could not compare the clocks right now.</p>";
+  }
+}
+
+/* ---- Card: distance & travel time ---- */
+
+// Straight-line ("as the crow flies") distance between two points
+// on Earth, using the well-known haversine formula.
+function distanceInKm(lat1, lon1, lat2, lon2) {
+  const toRad = Math.PI / 180;
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * toRad;
+  const dLon = (lon2 - lon1) * toRad;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Typical average speeds, in km/h — rough estimates for fun
+const TRAVEL_MODES = [
+  { icon: "✈️", label: "Flight", speed: 800 },
+  { icon: "🚆", label: "Train", speed: 90 },
+  { icon: "🚗", label: "Car", speed: 65 },
+  { icon: "🚢", label: "Ship", speed: 40 },
+];
+
+// Turn hours into a friendly "2d 5h" / "3h 20m" text
+function formatDuration(hoursTotal) {
+  const minutes = Math.round(hoursTotal * 60);
+  const days = Math.floor(minutes / (60 * 24));
+  const hours = Math.floor((minutes % (60 * 24)) / 60);
+  const mins = minutes % 60;
+  if (days > 0) return days + "d " + hours + "h";
+  if (hours > 0) return hours + "h " + (mins ? mins + "m" : "");
+  return mins + "m";
+}
+
+function loadDistance() {
+  const destination = currentDestination;
+  const home = getHomeLocation();
+
+  if (!home) {
+    distanceContent.innerHTML =
+      "<p class='muted'>Set where you are (in the Time Zones card) to see how far away this is.</p>";
+    return;
+  }
+
+  const km = distanceInKm(
+    home.latitude, home.longitude,
+    destination.latitude, destination.longitude
+  );
+
+  let modesHTML = "<div class='travel-modes'>";
+  for (const mode of TRAVEL_MODES) {
+    modesHTML +=
+      "<div><span>" + mode.icon + " " + mode.label + "</span>" +
+      "<span>" + formatDuration(km / mode.speed) + "</span></div>";
+  }
+  modesHTML += "</div>";
+
+  distanceContent.innerHTML =
+    "<span class='distance-value'>" + Math.round(km).toLocaleString() + " km</span>" +
+    "<p class='muted'>from " + home.name + ", as the crow flies</p>" +
+    modesHTML +
+    "<p class='muted' style='margin-top:8px; font-size:0.8rem;'>" +
+    "Rough estimates from average speeds, not real routes.</p>";
+}
+
+/* ------------------------------------------------------------
+   7d. EMERGENCY CONTACTS (Wikipedia)
+   Police / ambulance / fire numbers for the destination country,
+   read from Wikipedia's "List of emergency telephone numbers"
+   page. The page is downloaded and read ONCE, then remembered.
+   ------------------------------------------------------------ */
+const EMERGENCY_PAGE =
+  "https://en.wikipedia.org/wiki/List_of_emergency_telephone_numbers";
+
+let emergencyTable = null; // country name -> numbers, once loaded
+
+async function getEmergencyTable() {
+  if (emergencyTable) return emergencyTable;
+
+  const response = await fetch(
+    "https://en.wikipedia.org/api/rest_v1/page/html/List_of_emergency_telephone_numbers",
+    { signal: AbortSignal.timeout(20000) }
+  );
+  if (!response.ok) throw new Error("Wikipedia error " + response.status);
+  const html = await response.text();
+
+  // Read the page like the browser does, then walk its table rows:
+  // each row is Country | Police | Ambulance | Fire | Other
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  // Footnote marks like "[44]" are not part of the number
+  function cleanCell(cell) {
+    return cell.textContent.replace(/\[[^\]]*\]/g, "").trim();
+  }
+
+  // Some rows merge columns (e.g. Japan's 119 covers ambulance AND
+  // fire, written as one wide cell). Expanding each cell by its
+  // "colspan" keeps every value in the right column.
+  function expandRow(row) {
+    const values = [];
+    for (const cell of row.querySelectorAll("td, th")) {
+      const span = parseInt(cell.getAttribute("colspan") || "1", 10);
+      const value = cleanCell(cell);
+      for (let k = 0; k < span; k++) values.push(value);
+    }
+    return values;
+  }
+
+  // Long entries like "112; also 999 for..." are trimmed to the
+  // first part so the card stays tidy
+  function firstPart(value) {
+    return value.split(";")[0].trim().slice(0, 24);
+  }
+
+  emergencyTable = {};
+  for (const row of doc.querySelectorAll("tr")) {
+    const values = expandRow(row);
+    if (values.length < 4) continue;
+    const country = simplifyName(values[0]);
+    if (!country || emergencyTable[country]) continue;
+    emergencyTable[country] = {
+      police: firstPart(values[1]),
+      ambulance: firstPart(values[2]),
+      fire: firstPart(values[3]),
+    };
+  }
+  return emergencyTable;
+}
+
+async function loadEmergencyNumbers() {
+  const destination = currentDestination;
+
+  if (!destination.country) {
+    emergencyContent.innerHTML =
+      "<p class='muted'>No country information for this place.</p>";
+    return;
+  }
+
+  emergencyContent.innerHTML = "<p class='muted'>Looking up numbers...</p>";
+
+  try {
+    const table = await getEmergencyTable();
+    if (destination !== currentDestination) return;
+
+    // Find the destination's country in the table. Names can vary
+    // slightly ("United States" vs "United States of America"),
+    // so also try a contains-match both ways.
+    const wanted = simplifyName(destination.country);
+    let numbers = table[wanted];
+    if (!numbers) {
+      for (const name in table) {
+        if (name.includes(wanted) || wanted.includes(name)) {
+          numbers = table[name];
+          break;
+        }
+      }
+    }
+
+    if (!numbers) {
+      emergencyContent.innerHTML =
+        "<p class='muted'>No listing found for " + destination.country +
+        ". In most countries, 112 works.</p>";
+      return;
+    }
+
+    emergencyContent.innerHTML =
+      "<div class='emg-row'><span>🚓 Police</span>" +
+      "<span class='emg-number'>" + (numbers.police || "112") + "</span></div>" +
+      "<div class='emg-row'><span>🚑 Ambulance</span>" +
+      "<span class='emg-number'>" + (numbers.ambulance || "112") + "</span></div>" +
+      "<div class='emg-row'><span>🚒 Fire</span>" +
+      "<span class='emg-number'>" + (numbers.fire || "112") + "</span></div>" +
+      "<p class='muted emg-source'>For " + destination.country +
+      " · <a href='" + EMERGENCY_PAGE +
+      "' target='_blank' rel='noopener'>source: Wikipedia</a></p>";
+  } catch (error) {
+    if (destination !== currentDestination) return;
+    emergencyContent.innerHTML =
+      "<p class='muted'>⚠️ Could not load the numbers. In most countries, 112 works.</p>";
+  }
+}
+
+/* ------------------------------------------------------------
    8. CURRENCY CONVERTER (Frankfurter API)
    ------------------------------------------------------------ */
 
@@ -1396,6 +2243,10 @@ function renderSavedList() {
     nameButton.className = "trip-name";
     nameButton.textContent = "❤️ " + trip.name;
     nameButton.addEventListener("click", function () {
+      // A saved trip is always a DESTINATION, even if the page is
+      // still on the "where are you now?" step.
+      pickingHome = false;
+      applyStageText();
       searchDestination(trip.name);
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -1425,6 +2276,14 @@ function renderSavedList() {
    ------------------------------------------------------------ */
 fillCurrencyDropdowns();
 renderSavedList();
+// The journey ALWAYS begins at "Where are you now?". If a home
+// is remembered from last time, pre-type it in the search bar so
+// one click on 🔍 continues straight through.
+if (getHomeLocation()) {
+  homeInput.value = getHomeLocation().name;
+  searchInput.value = getHomeLocation().name;
+}
+applyStageText();
 drawGlobe();        // draw the plain globe right away
 loadWorldShapes();  // then load the country shapes onto it
 startAutoSpin();    // gently spin until the user grabs it

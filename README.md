@@ -1,4 +1,4 @@
-# 🧳 Travel Buddy
+# ABY Go · All Before You Go
 
 An all-in-one travel planner built with plain HTML, CSS and vanilla JavaScript.
 Spin the globe, click a spot, pick the precise place, and see weather,

@@ -3,38 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Travel Buddy — Plan your trip</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>ABY Go | All Before You Go</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+  <!-- Playfair Display Bold for headings, Nunito for text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Nunito:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <!-- The ?v= number forces browsers to fetch the newest files
+       instead of old cached ones. Bump it when you change them. -->
+  <link rel="stylesheet" href="style.css?v=36" />
 </head>
 <body>
 
   <nav class="navbar">
-    <div class="nav-logo">🧳 Travel Buddy</div>
+    <div class="nav-logo">
+      <img src="logo.png" alt="ABY Go badge" class="nav-logo-img" />
+      <img src="wordmark.png" alt="ABY Go" class="nav-wordmark" />
+    </div>
     <div class="nav-links">
       <a href="#explore">Explore</a>
       <a href="#my-trips">My Trips</a>
     </div>
+    <!-- Takes you back to the "Where are you now?" step -->
+    <button id="nav-back" class="nav-back" hidden>← Back</button>
   </nav>
 
 
   <header class="hero" id="explore">
-    <h1>Your journey starts here.</h1>
-    <p>Weather, destination info, daylight and currency — all in one place.</p>
-    <p class="hero-hint">🌍 Spin the globe, then click where you want to go.</p>
-    <div class="globe-wrap">
-      <canvas id="globe" width="480" height="480"></canvas>
+    <!-- Left side: the words and the search bar -->
+    <div class="hero-text">
+      <h1 id="hero-title">Where are you now?</h1>
+      <p id="hero-subtitle">First, set your starting point.</p>
+      <p id="hero-hint" class="hero-hint">🌍 Spin the globe and click your home, or type it below.</p>
+
+      <!-- Small search bar for typing an exact location -->
+      <form id="search-form" class="mini-search">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="or type a place, e.g. Paris"
+          autocomplete="off"
+        />
+        <button type="submit" aria-label="Search">🔍</button>
+      </form>
     </div>
 
-    <!-- Small search bar for typing an exact location -->
-    <form id="search-form" class="mini-search">
-      <input
-        type="text"
-        id="search-input"
-        placeholder="or type a place, e.g. Paris"
-        autocomplete="off"
-      />
-      <button type="submit" aria-label="Search">🔍</button>
-    </form>
+    <!-- Right side: the big globe -->
+    <div class="globe-wrap">
+      <canvas id="globe" width="640" height="640"></canvas>
+    </div>
 
     <p id="status-message" class="status-message" hidden></p>
     <div id="suggestions" class="suggestions" hidden>
@@ -77,6 +97,39 @@
         </div>
       </article>
 
+      <!-- Time zones card: compare YOUR time with the destination -->
+      <article class="card card-timezone">
+        <h3>🕐 Time Zones</h3>
+        <div class="home-setter">
+          <input
+            type="text"
+            id="home-input"
+            placeholder="Where are you? e.g. Chennai"
+            autocomplete="off"
+          />
+          <button id="home-button">Set</button>
+        </div>
+        <div id="timezone-content">
+          <p class="muted">Tell us where you are to compare times.</p>
+        </div>
+      </article>
+
+      <!-- Distance & travel time card -->
+      <article class="card card-distance">
+        <h3>🧭 Distance &amp; Travel Time</h3>
+        <div id="distance-content">
+          <p class="muted">Set where you are (in the Time Zones card) to see how far away this is.</p>
+        </div>
+      </article>
+
+      <!-- Emergency contacts card (numbers from Wikipedia) -->
+      <article class="card card-emergency">
+        <h3>🆘 Emergency Contacts</h3>
+        <div id="emergency-content">
+          <p class="muted">Pick a destination to see its emergency numbers.</p>
+        </div>
+      </article>
+
       <!-- Currency card (tall, middle column) -->
       <article class="card card-currency">
         <h3>💱 Currency Converter</h3>
@@ -109,6 +162,23 @@
 
   </main>
 
-  <script src="script.js"></script>
+  <!-- Full-screen transition between step 1 and step 2.
+       The video's WHITE areas are made transparent so the real
+       first page shows through them; the GRAY wipe covers the
+       screen while the page switches underneath, then fades away
+       to reveal the real second page.
+       The ✈️ emoji is a backup in case the video can't play. -->
+  <div id="plane-overlay" class="plane-overlay" hidden>
+    <video
+      id="plane-video"
+      src="page-transition.mp4"
+      muted
+      playsinline
+      preload="auto"
+    ></video>
+    <span id="plane" class="plane" hidden>✈️</span>
+  </div>
+
+  <script src="script.js?v=36"></script>
 </body>
 </html>
