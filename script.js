@@ -324,14 +324,55 @@ function drawRing(ring) {
   globeCtx.closePath();
 }
 
+/*
+  Trace thin country borders over the satellite photo. Unlike the
+  filled shapes, we only draw the pieces of each border that face
+  us, lifting the pen whenever a line slips behind the globe.
+*/
+function drawCountryBorders(ctx) {
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.28)";
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+
+  function traceRing(ring) {
+    let drawing = false;
+    for (const [lon, lat] of ring) {
+      const p = projectPoint(lat, lon);
+      if (p.front) {
+        if (!drawing) {
+          ctx.moveTo(p.x, p.y);
+          drawing = true;
+        } else {
+          ctx.lineTo(p.x, p.y);
+        }
+      } else {
+        drawing = false; // the border went around the far side
+      }
+    }
+  }
+
+  for (const feature of worldShapes.features) {
+    const geom = feature.geometry;
+    if (geom.type === "Polygon") {
+      for (const ring of geom.coordinates) traceRing(ring);
+    } else if (geom.type === "MultiPolygon") {
+      for (const polygon of geom.coordinates) {
+        for (const ring of polygon) traceRing(ring);
+      }
+    }
+  }
+  ctx.stroke();
+}
+
 // Draw the whole globe: ocean, grid lines, countries, marker
 function drawGlobe() {
   const ctx = globeCtx;
   ctx.clearRect(0, 0, GLOBE_SIZE, GLOBE_SIZE);
 
   if (earthTexture) {
-    // The real satellite photo of Earth
+    // The real satellite photo of Earth, with thin country borders
     drawTexturedSphere(ctx);
+    if (worldShapes) drawCountryBorders(ctx);
   } else {
   // Ocean: deep blues, lit from the upper left like a real planet
   const ocean = ctx.createRadialGradient(
