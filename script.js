@@ -241,12 +241,25 @@ function drawGlobe() {
   const ctx = globeCtx;
   ctx.clearRect(0, 0, GLOBE_SIZE, GLOBE_SIZE);
 
-  // Ocean (a soft blue circle with a little shading)
-  const ocean = ctx.createRadialGradient(
-    GLOBE_CX - 60, GLOBE_CY - 80, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
+  // A soft blue "atmosphere" glow just outside the globe's edge
+  const glow = ctx.createRadialGradient(
+    GLOBE_CX, GLOBE_CY, GLOBE_R - 4, GLOBE_CX, GLOBE_CY, GLOBE_R + 18
   );
-  ocean.addColorStop(0, "#7dd3fc");
-  ocean.addColorStop(1, "#0369a1");
+  glow.addColorStop(0, "rgba(120, 170, 255, 0)");
+  glow.addColorStop(0.35, "rgba(120, 170, 255, 0.35)");
+  glow.addColorStop(1, "rgba(120, 170, 255, 0)");
+  ctx.beginPath();
+  ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R + 18, 0, Math.PI * 2);
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  // Ocean: deep blues, lit from the upper left like a real planet
+  const ocean = ctx.createRadialGradient(
+    GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
+  );
+  ocean.addColorStop(0, "#2f6ea8");
+  ocean.addColorStop(0.55, "#144a7c");
+  ocean.addColorStop(1, "#082846");
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
   ctx.fillStyle = ocean;
@@ -254,7 +267,7 @@ function drawGlobe() {
 
   // Grid lines (every 30 degrees) so the spin is visible over oceans.
   // We only draw the parts of each line facing us.
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.10)";
   ctx.lineWidth = 1;
 
   // Vertical lines (meridians)
@@ -270,10 +283,16 @@ function drawGlobe() {
     }, 121);
   }
 
-  // Countries
+  // Countries: muted natural greens, brighter where the light hits
   if (worldShapes) {
-    ctx.fillStyle = "#4ade80";
-    ctx.strokeStyle = "rgba(6, 78, 59, 0.5)";
+    const land = ctx.createRadialGradient(
+      GLOBE_CX - 90, GLOBE_CY - 110, 40, GLOBE_CX, GLOBE_CY, GLOBE_R
+    );
+    land.addColorStop(0, "#6aa96b");
+    land.addColorStop(0.55, "#3d7a4d");
+    land.addColorStop(1, "#1d4a30");
+    ctx.fillStyle = land;
+    ctx.strokeStyle = "rgba(8, 40, 25, 0.55)";
     ctx.lineWidth = 0.6;
     for (const feature of worldShapes.features) {
       const geom = feature.geometry;
@@ -290,11 +309,26 @@ function drawGlobe() {
     }
   }
 
+  // Sphere shading painted over everything: a gentle highlight where
+  // the light lands, falling away into shadow at the far edge. This
+  // is what makes the flat circle read as a solid 3D ball.
+  const shade = ctx.createRadialGradient(
+    GLOBE_CX - 90, GLOBE_CY - 110, 30, GLOBE_CX, GLOBE_CY, GLOBE_R
+  );
+  shade.addColorStop(0, "rgba(255, 255, 255, 0.14)");
+  shade.addColorStop(0.4, "rgba(255, 255, 255, 0)");
+  shade.addColorStop(0.75, "rgba(4, 10, 25, 0.18)");
+  shade.addColorStop(1, "rgba(4, 10, 25, 0.6)");
+  ctx.beginPath();
+  ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
+  ctx.fillStyle = shade;
+  ctx.fill();
+
   // A thin outline around the globe
   ctx.beginPath();
   ctx.arc(GLOBE_CX, GLOBE_CY, GLOBE_R, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255,255,255,0.6)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(190, 215, 255, 0.35)";
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
   // A red pin where the user clicked
