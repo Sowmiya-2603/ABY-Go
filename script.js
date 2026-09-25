@@ -1466,18 +1466,18 @@ async function showDestination(destination) {
 // Open-Meteo describes weather with a number code.
 // This little table turns the code into words + an emoji icon.
 function describeWeather(code) {
-  if (code === 0) return { text: "Clear sky", icon: "sun" };
-  if (code === 1) return { text: "Mainly clear", icon: "cloud-sun" };
-  if (code === 2) return { text: "Partly cloudy", icon: "cloud-sun" };
-  if (code === 3) return { text: "Overcast", icon: "cloud" };
-  if (code === 45 || code === 48) return { text: "Foggy", icon: "cloud-fog" };
-  if (code >= 51 && code <= 57) return { text: "Drizzle", icon: "cloud-drizzle" };
-  if (code >= 61 && code <= 67) return { text: "Rain", icon: "cloud-rain" };
-  if (code >= 71 && code <= 77) return { text: "Snow", icon: "snowflake" };
-  if (code >= 80 && code <= 82) return { text: "Rain showers", icon: "cloud-rain" };
-  if (code === 85 || code === 86) return { text: "Snow showers", icon: "cloud-snow" };
-  if (code >= 95) return { text: "Thunderstorm", icon: "cloud-lightning" };
-  return { text: "Unknown", icon: "thermometer" };
+  if (code === 0) return { text: "Clear sky", icon: "☀️" };
+  if (code === 1) return { text: "Mainly clear", icon: "🌤️" };
+  if (code === 2) return { text: "Partly cloudy", icon: "⛅" };
+  if (code === 3) return { text: "Overcast", icon: "☁️" };
+  if (code === 45 || code === 48) return { text: "Foggy", icon: "🌫️" };
+  if (code >= 51 && code <= 57) return { text: "Drizzle", icon: "🌦️" };
+  if (code >= 61 && code <= 67) return { text: "Rain", icon: "🌧️" };
+  if (code >= 71 && code <= 77) return { text: "Snow", icon: "❄️" };
+  if (code >= 80 && code <= 82) return { text: "Rain showers", icon: "🌧️" };
+  if (code === 85 || code === 86) return { text: "Snow showers", icon: "🌨️" };
+  if (code >= 95) return { text: "Thunderstorm", icon: "⛈️" };
+  return { text: "Unknown", icon: "🌡️" };
 }
 
 async function loadWeather() {
@@ -1522,7 +1522,7 @@ async function loadWeather() {
           .toLocaleDateString(undefined, { weekday: "short" });
         const dayWeather = describeWeather(data.daily.weather_code[i]);
         forecastHTML +=
-          "<div>" + day + ": " + icon(dayWeather.icon) + " " +
+          "<div>" + day + ": " + dayWeather.icon + " " +
           Math.round(data.daily.temperature_2m_min[i]) + "° / " +
           Math.round(data.daily.temperature_2m_max[i]) + "°C</div>";
       }
@@ -1530,7 +1530,7 @@ async function loadWeather() {
     }
 
     weatherContent.innerHTML =
-      "<span class='weather-icon'>" + icon(weather.icon) + "</span> " +
+      "<span class='weather-icon'>" + weather.icon + "</span> " +
       "<span class='weather-temp'>" + Math.round(current.temperature_2m) + "°C</span>" +
       "<p>" + weather.text + "</p>" +
       "<p class='weather-detail'>Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
