@@ -11,7 +11,7 @@ window.addEventListener("error", function (event) {
     "background:#b91c1c; color:#fff; padding:10px 16px;" +
     "font:13px monospace; white-space:pre-wrap;";
   banner.textContent =
-    "⚠️ JavaScript error: " + event.message +
+    "JavaScript error: " + event.message +
     "  (" + (event.filename || "").split("/").pop() + ":" + event.lineno + ")" +
     "\nTry a hard refresh: Cmd+Shift+R";
   document.body.appendChild(banner);
@@ -67,6 +67,57 @@ const noSavedMessage = document.getElementById("no-saved-message");
 // The app has two steps: first the user picks WHERE THEY ARE
 // (their home), then WHERE THEY WANT TO GO. If a home is already
 // remembered from a past visit, we skip straight to exploring.
+/* ------------------------------------------------------------
+   ICONS (from lucide.dev, ISC licence) - small inline SVG pictures
+   used everywhere instead of emojis. icon("name") returns one;
+   icon("name", true) returns it filled in (used for saved hearts).
+   ------------------------------------------------------------ */
+const ICONS = {
+  "globe": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /><path d=\"M2 12h20\" /></svg>",
+  "search": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg>",
+  "heart": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\" /></svg>",
+  "sunrise": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 2v8\" /><path d=\"m4.93 10.93 1.41 1.41\" /><path d=\"M2 18h2\" /><path d=\"M20 18h2\" /><path d=\"m19.07 10.93-1.41 1.41\" /><path d=\"M22 22H2\" /><path d=\"m8 6 4-4 4 4\" /><path d=\"M16 18a4 4 0 0 0-8 0\" /></svg>",
+  "sunset": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 10V2\" /><path d=\"m4.93 10.93 1.41 1.41\" /><path d=\"M2 18h2\" /><path d=\"M20 18h2\" /><path d=\"m19.07 10.93-1.41 1.41\" /><path d=\"M22 22H2\" /><path d=\"m16 6-4 4-4-4\" /><path d=\"M16 18a4 4 0 0 0-8 0\" /></svg>",
+  "map-pin": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\" /><circle cx=\"12\" cy=\"10\" r=\"3\" /></svg>",
+  "clock": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 6v6l4 2\" /></svg>",
+  "sparkles": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z\" /><path d=\"M20 2v4\" /><path d=\"M22 4h-4\" /><circle cx=\"4\" cy=\"20\" r=\"2\" /></svg>",
+  "ferris-wheel": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"2\" /><path d=\"M12 2v4\" /><path d=\"m6.8 15-3.5 2\" /><path d=\"m20.7 7-3.5 2\" /><path d=\"M6.8 9 3.3 7\" /><path d=\"m20.7 17-3.5-2\" /><path d=\"m9 22 3-8 3 8\" /><path d=\"M8 22h8\" /><path d=\"M18 18.7a9 9 0 1 0-12 0\" /></svg>",
+  "landmark": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M10 18v-7\" /><path d=\"M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z\" /><path d=\"M14 18v-7\" /><path d=\"M18 18v-7\" /><path d=\"M3 22h18\" /><path d=\"M6 18v-7\" /></svg>",
+  "coffee": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M10 2v2\" /><path d=\"M14 2v2\" /><path d=\"M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1\" /><path d=\"M6 2v2\" /></svg>",
+  "leaf": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20\" /><path d=\"M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13\" /></svg>",
+  "building-2": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M10 12h4\" /><path d=\"M10 8h4\" /><path d=\"M14 21v-3a2 2 0 0 0-4 0v3\" /><path d=\"M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2\" /><path d=\"M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16\" /></svg>",
+  "map": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\" /><path d=\"M15 5.764v15\" /><path d=\"M9 3.236v15\" /></svg>",
+  "triangle-alert": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\" /><path d=\"M12 9v4\" /><path d=\"M12 17h.01\" /></svg>",
+  "frown": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M15 10V9\" /><path d=\"M9 10V9\" /><path d=\"M9 16a5 5 0 016 0\" /><circle cx=\"12\" cy=\"12\" r=\"10\" /></svg>",
+  "waves": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M2 12q2.5 2 5 0t5 0 5 0 5 0\" /><path d=\"M2 19q2.5 2 5 0t5 0 5 0 5 0\" /><path d=\"M2 5q2.5 2 5 0t5 0 5 0 5 0\" /></svg>",
+  "house": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" /><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" /></svg>",
+  "target": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"10\" /><circle cx=\"12\" cy=\"12\" r=\"6\" /><circle cx=\"12\" cy=\"12\" r=\"2\" /></svg>",
+  "sun": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"4\" /><path d=\"M12 2v2\" /><path d=\"M12 20v2\" /><path d=\"m4.93 4.93 1.41 1.41\" /><path d=\"m17.66 17.66 1.41 1.41\" /><path d=\"M2 12h2\" /><path d=\"M20 12h2\" /><path d=\"m6.34 17.66-1.41 1.41\" /><path d=\"m19.07 4.93-1.41 1.41\" /></svg>",
+  "cloud-sun": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 2v2\" /><path d=\"m4.93 4.93 1.41 1.41\" /><path d=\"M20 12h2\" /><path d=\"m19.07 4.93-1.41 1.41\" /><path d=\"M15.947 12.65a4 4 0 0 0-5.925-4.128\" /><path d=\"M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z\" /></svg>",
+  "cloud": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z\" /></svg>",
+  "cloud-fog": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /><path d=\"M16 17H7\" /><path d=\"M17 21H9\" /></svg>",
+  "cloud-drizzle": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /><path d=\"M8 19v1\" /><path d=\"M8 14v1\" /><path d=\"M16 19v1\" /><path d=\"M16 14v1\" /><path d=\"M12 21v1\" /><path d=\"M12 16v1\" /></svg>",
+  "cloud-rain": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /><path d=\"M16 14v6\" /><path d=\"M8 14v6\" /><path d=\"M12 16v6\" /></svg>",
+  "snowflake": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m10 20-1.25-2.5L6 18\" /><path d=\"M10 4 8.75 6.5 6 6\" /><path d=\"m14 20 1.25-2.5L18 18\" /><path d=\"m14 4 1.25 2.5L18 6\" /><path d=\"m17 21-3-6h-4\" /><path d=\"m17 3-3 6 1.5 3\" /><path d=\"M2 12h6.5L10 9\" /><path d=\"m20 10-1.5 2 1.5 2\" /><path d=\"M22 12h-6.5L14 15\" /><path d=\"m4 10 1.5 2L4 14\" /><path d=\"m7 21 3-6-1.5-3\" /><path d=\"m7 3 3 6h4\" /></svg>",
+  "cloud-snow": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242\" /><path d=\"M8 15h.01\" /><path d=\"M8 19h.01\" /><path d=\"M12 17h.01\" /><path d=\"M12 21h.01\" /><path d=\"M16 15h.01\" /><path d=\"M16 19h.01\" /></svg>",
+  "cloud-lightning": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973\" /><path d=\"m13 12-3 5h4l-3 5\" /></svg>",
+  "thermometer": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z\" /></svg>",
+  "check": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M20 6 9 17l-5-5\" /></svg>",
+  "plane": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z\" /></svg>",
+  "train-front": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M8 3.1V7a4 4 0 0 0 8 0V3.1\" /><path d=\"m9 15-1-1\" /><path d=\"m15 15 1-1\" /><path d=\"M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z\" /><path d=\"m8 19-2 3\" /><path d=\"m16 19 2 3\" /></svg>",
+  "car": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2\" /><circle cx=\"7\" cy=\"17\" r=\"2\" /><path d=\"M9 17h6\" /><circle cx=\"17\" cy=\"17\" r=\"2\" /></svg>",
+  "ship": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 2v2\" /><path d=\"M12 9.189V13\" /><path d=\"M19 12V6a2 2 0 00-2-2H7a2 2 0 00-2 2v6\" /><path d=\"M19.38 19A11.6 11.6 0 0021 13l-8.188-3.639a2 2 0 00-1.624 0L3 13.001a11.6 11.6 0 002.81 7.76\" /><path d=\"M2 20c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1\" /></svg>",
+  "shield": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\" /></svg>",
+  "ambulance": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M10 10H6\" /><path d=\"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2\" /><path d=\"M19 18h2a1 1 0 0 0 1-1v-3.28a1 1 0 0 0-.684-.948l-1.923-.641a1 1 0 0 1-.578-.502l-1.539-3.076A1 1 0 0 0 16.382 8H14\" /><path d=\"M8 8v4\" /><path d=\"M9 18h6\" /><circle cx=\"17\" cy=\"18\" r=\"2\" /><circle cx=\"7\" cy=\"18\" r=\"2\" /></svg>",
+  "flame": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4\" /></svg>",
+  "x": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg>",
+};
+function icon(name, filled) {
+  let svg = ICONS[name] || "";
+  if (filled) svg = svg.replace('class="icon"', 'class="icon icon-filled"');
+  return svg;
+}
+
 let pickingHome = true;
 
 /* Swap the hero text to match the current step */
@@ -77,15 +128,15 @@ function applyStageText() {
   if (pickingHome) {
     heroTitle.textContent = "Where are you now?";
     heroSubtitle.textContent = "First, set your starting point.";
-    heroHint.textContent =
-      "🌍 Spin the globe and click your home, or type it below.";
+    heroHint.innerHTML =
+      icon("globe") + " Spin the globe and click your home, or type it below.";
     searchInput.placeholder = "type your city, e.g. Chennai";
   } else {
     heroTitle.textContent = "Where do you plan to explore?";
     heroSubtitle.textContent =
       "Weather, destination info, daylight and currency, all in one place.";
-    heroHint.textContent =
-      "🌍 Spin the globe, then click where you want to go.";
+    heroHint.innerHTML =
+      icon("globe") + " Spin the globe, then click where you want to go.";
     searchInput.placeholder = "or type a place, e.g. Paris";
   }
 }
@@ -115,8 +166,9 @@ let clickedPoint = null;
 let spinTimer = null;
 
 /* Small helpers for the loading / error message */
-function showStatus(text) {
-  statusMessage.textContent = text;
+function showStatus(text, iconName) {
+  statusMessage.innerHTML = iconName ? icon(iconName) + " " : "";
+  statusMessage.appendChild(document.createTextNode(text));
   statusMessage.hidden = false;
 }
 function hideStatus() {
@@ -601,7 +653,7 @@ const COUNTRY_TO_CAPITAL = {
 
 async function findNearbyPlaces(lat, lon) {
   suggestionsBox.hidden = true;
-  showStatus("🔎 Looking up places near that spot...");
+  showStatus("Looking up places near that spot...", "search");
 
   try {
     // First try BigDataCloud's reverse geocoder...
@@ -676,7 +728,7 @@ async function findNearbyPlaces(lat, lon) {
     addSuggestion(data.countryName, "Country");
 
     if (suggestions.length === 0) {
-      showStatus("🌊 That looks like open water! Try clicking on land.");
+      showStatus("That looks like open water! Try clicking on land.", "waves");
       return;
     }
 
@@ -686,9 +738,9 @@ async function findNearbyPlaces(lat, lon) {
 
     // Show the suggestions as clickable buttons
     hideStatus();
-    suggestionsTitle.textContent = pickingHome
-      ? "🏠 Places near where you clicked. Pick where you are:"
-      : "🎯 Places near where you clicked. Pick the most precise one:";
+    suggestionsTitle.innerHTML = pickingHome
+      ? icon("house") + " Places near where you clicked. Pick where you are:"
+      : icon("target") + " Places near where you clicked. Pick the most precise one:";
     suggestionButtons.innerHTML = "";
     for (const s of suggestions.slice(0, 7)) {
       const button = document.createElement("button");
@@ -700,7 +752,7 @@ async function findNearbyPlaces(lat, lon) {
     }
     suggestionsBox.hidden = false;
   } catch (error) {
-    showStatus("⚠️ Could not look up that spot. Please try again.");
+    showStatus("Could not look up that spot. Please try again.", "triangle-alert");
   }
 }
 
@@ -760,13 +812,13 @@ async function choosePlace(name) {
         kind: "region", // these fallbacks are districts/regions
       };
     } else {
-      showStatus("😕 Sorry, we couldn't find \"" + name + "\".");
+      showStatus("Sorry, we couldn't find \"" + name + "\".", "frown");
       return;
     }
 
     await handleChosenPlace(destination);
   } catch (error) {
-    showStatus("⚠️ Something went wrong. Please check your connection and try again.");
+    showStatus("Something went wrong. Please check your connection and try again.", "triangle-alert");
   }
 }
 
@@ -784,7 +836,7 @@ async function searchDestination(cityName) {
       // Not a city? Try the geocoder that knows states and regions
       const options = await searchNominatim(cityName);
       if (options.length === 0) {
-        showStatus("😕 Sorry, we couldn't find \"" + cityName + "\".");
+        showStatus("Sorry, we couldn't find \"" + cityName + "\".", "frown");
         return;
       }
       pointGlobeAt(options[0].dest.latitude, options[0].dest.longitude);
@@ -793,7 +845,7 @@ async function searchDestination(cityName) {
     }
     await handleChosenPlace(placeToDestination(data.results[0]));
   } catch (error) {
-    showStatus("⚠️ Something went wrong. Please check your connection and try again.");
+    showStatus("Something went wrong. Please check your connection and try again.", "triangle-alert");
   }
 }
 
@@ -839,7 +891,7 @@ searchForm.addEventListener("submit", function (event) {
 
 async function searchExactLocation(name) {
   suggestionsBox.hidden = true;
-  showStatus("🔎 Searching for \"" + name + "\"...");
+  showStatus("Searching for \"" + name + "\"...", "search");
 
   try {
     // First ask Open-Meteo's geocoder — fast and great for cities.
@@ -865,7 +917,7 @@ async function searchExactLocation(name) {
     }
 
     if (options.length === 0) {
-      showStatus("😕 Sorry, we couldn't find \"" + name + "\". Try another spelling!");
+      showStatus("Sorry, we couldn't find \"" + name + "\". Try another spelling!", "frown");
       return;
     }
 
@@ -885,7 +937,7 @@ async function searchExactLocation(name) {
     // Several places share this name (Paris, France vs Paris,
     // Texas...) — let the user pick the exact one.
     hideStatus();
-    suggestionsTitle.textContent = "🎯 Several places match. Pick the exact one:";
+    suggestionsTitle.innerHTML = icon("target") + " Several places match. Pick the exact one:";
     suggestionButtons.innerHTML = "";
     for (const option of options) {
       const button = document.createElement("button");
@@ -900,7 +952,7 @@ async function searchExactLocation(name) {
     }
     suggestionsBox.hidden = false;
   } catch (error) {
-    showStatus("⚠️ Something went wrong. Please check your connection and try again.");
+    showStatus("Something went wrong. Please check your connection and try again.", "triangle-alert");
   }
 }
 
@@ -1226,8 +1278,8 @@ function playPlaneTransition() {
     "Where do you plan to explore?";
   heroCopy.querySelector("#hero-subtitle").textContent =
     "Weather, destination info, daylight and currency, all in one place.";
-  heroCopy.querySelector("#hero-hint").textContent =
-    "🌍 Spin the globe, then click where you want to go.";
+  heroCopy.querySelector("#hero-hint").innerHTML =
+    icon("globe") + " Spin the globe, then click where you want to go.";
   heroCopy.querySelector("#search-input").value = "";
   heroCopy.querySelector("#search-input").placeholder =
     "or type a place, e.g. Paris";
@@ -1373,18 +1425,18 @@ async function showDestination(destination) {
 // Open-Meteo describes weather with a number code.
 // This little table turns the code into words + an emoji icon.
 function describeWeather(code) {
-  if (code === 0) return { text: "Clear sky", icon: "☀️" };
-  if (code === 1) return { text: "Mainly clear", icon: "🌤️" };
-  if (code === 2) return { text: "Partly cloudy", icon: "⛅" };
-  if (code === 3) return { text: "Overcast", icon: "☁️" };
-  if (code === 45 || code === 48) return { text: "Foggy", icon: "🌫️" };
-  if (code >= 51 && code <= 57) return { text: "Drizzle", icon: "🌦️" };
-  if (code >= 61 && code <= 67) return { text: "Rain", icon: "🌧️" };
-  if (code >= 71 && code <= 77) return { text: "Snow", icon: "❄️" };
-  if (code >= 80 && code <= 82) return { text: "Rain showers", icon: "🌧️" };
-  if (code === 85 || code === 86) return { text: "Snow showers", icon: "🌨️" };
-  if (code >= 95) return { text: "Thunderstorm", icon: "⛈️" };
-  return { text: "Unknown", icon: "🌡️" };
+  if (code === 0) return { text: "Clear sky", icon: "sun" };
+  if (code === 1) return { text: "Mainly clear", icon: "cloud-sun" };
+  if (code === 2) return { text: "Partly cloudy", icon: "cloud-sun" };
+  if (code === 3) return { text: "Overcast", icon: "cloud" };
+  if (code === 45 || code === 48) return { text: "Foggy", icon: "cloud-fog" };
+  if (code >= 51 && code <= 57) return { text: "Drizzle", icon: "cloud-drizzle" };
+  if (code >= 61 && code <= 67) return { text: "Rain", icon: "cloud-rain" };
+  if (code >= 71 && code <= 77) return { text: "Snow", icon: "snowflake" };
+  if (code >= 80 && code <= 82) return { text: "Rain showers", icon: "cloud-rain" };
+  if (code === 85 || code === 86) return { text: "Snow showers", icon: "cloud-snow" };
+  if (code >= 95) return { text: "Thunderstorm", icon: "cloud-lightning" };
+  return { text: "Unknown", icon: "thermometer" };
 }
 
 async function loadWeather() {
@@ -1429,7 +1481,7 @@ async function loadWeather() {
           .toLocaleDateString(undefined, { weekday: "short" });
         const dayWeather = describeWeather(data.daily.weather_code[i]);
         forecastHTML +=
-          "<div>" + day + ": " + dayWeather.icon + " " +
+          "<div>" + day + ": " + icon(dayWeather.icon) + " " +
           Math.round(data.daily.temperature_2m_min[i]) + "° / " +
           Math.round(data.daily.temperature_2m_max[i]) + "°C</div>";
       }
@@ -1437,7 +1489,7 @@ async function loadWeather() {
     }
 
     weatherContent.innerHTML =
-      "<span class='weather-icon'>" + weather.icon + "</span> " +
+      "<span class='weather-icon'>" + icon(weather.icon) + "</span> " +
       "<span class='weather-temp'>" + Math.round(current.temperature_2m) + "°C</span>" +
       "<p>" + weather.text + "</p>" +
       "<p class='weather-detail'>Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
@@ -1446,7 +1498,7 @@ async function loadWeather() {
       forecastHTML;
   } catch (error) {
     if (destination !== currentDestination) return;
-    weatherContent.innerHTML = "<p class='muted'>⚠️ Could not load the weather right now.</p>";
+    weatherContent.innerHTML = "<p class='muted'>" + icon("triangle-alert") + " Could not load the weather right now.</p>";
   }
 }
 
@@ -1490,13 +1542,13 @@ async function loadSunTimes() {
 
     sunContent.innerHTML =
       "<div class='sun-times'>" +
-      "<p>🌅 Sunrise: <strong>" + sunrise + "</strong></p>" +
-      "<p>🌇 Sunset: <strong>" + sunset + "</strong></p>" +
+      "<p>" + icon("sunrise") + " Sunrise: <strong>" + sunrise + "</strong></p>" +
+      "<p>" + icon("sunset") + " Sunset: <strong>" + sunset + "</strong></p>" +
       "<p class='muted'>Local time in " + destination.name + "</p>" +
       "</div>";
   } catch (error) {
     if (destination !== currentDestination) return;
-    sunContent.innerHTML = "<p class='muted'>⚠️ Could not load sunrise and sunset times.</p>";
+    sunContent.innerHTML = "<p class='muted'>" + icon("triangle-alert") + " Could not load sunrise and sunset times.</p>";
   }
 }
 
@@ -1548,7 +1600,7 @@ async function loadWikipedia() {
       "<a class='wiki-link' href='" + pageUrl + "' target='_blank' rel='noopener'>Read more on Wikipedia →</a>";
   } catch (error) {
     if (destination !== currentDestination) return;
-    wikiContent.innerHTML = "<p class='muted'>⚠️ No Wikipedia information found for this destination.</p>";
+    wikiContent.innerHTML = "<p class='muted'>" + icon("triangle-alert") + " No Wikipedia information found for this destination.</p>";
   }
 }
 
@@ -1568,7 +1620,7 @@ async function loadWikipedia() {
 const EXPLORE_CATEGORIES = [
   {
     key: "touristSpots",
-    title: "🗼 Tourist Spots",
+    title: "Tourist Spots", icon: "ferris-wheel",
     max: 6,
     keywords: ["museum", "gallery", "attraction", "landmark",
       "square", "plaza", "aquarium", "zoo", "exhibition",
@@ -1576,7 +1628,7 @@ const EXPLORE_CATEGORIES = [
   },
   {
     key: "monuments",
-    title: "🗿 Monuments",
+    title: "Monuments", icon: "landmark",
     max: 6,
     keywords: ["monument", "memorial", "statue", "obelisk", "column",
       "mausoleum", "tomb", "ruin", "archaeological", "triumphal arch",
@@ -1589,13 +1641,13 @@ const EXPLORE_CATEGORIES = [
   },
   {
     key: "cafesAndRestaurants",
-    title: "☕ Cafés & Restaurants",
+    title: "Cafés & Restaurants", icon: "coffee",
     max: 6,
     keywords: ["café", "cafe", "restaurant", "brasserie", "bistro", "coffee"],
   },
   {
     key: "nature",
-    title: "🌿 Nature",
+    title: "Nature", icon: "leaf",
     max: 6,
     keywords: ["park", "garden", "forest", "lake", "island", "botanical",
       "canal", "beach", "hill", "mountain"],
@@ -1609,7 +1661,7 @@ const EXPLORE_CATEGORIES = [
 const REGION_CATEGORIES = [
   {
     key: "touristSpots",
-    title: "🗼 Tourist Spots",
+    title: "Tourist Spots", icon: "ferris-wheel",
     max: 6,
     search: "famous tourist attractions in",
     keywords: ["attraction", "landmark", "museum", "heritage", "site",
@@ -1618,7 +1670,7 @@ const REGION_CATEGORIES = [
   },
   {
     key: "monuments",
-    title: "🗿 Monuments",
+    title: "Monuments", icon: "landmark",
     max: 6,
     search: "famous monuments and temples in",
     keywords: ["monument", "memorial", "statue", "tomb", "ruins",
@@ -1628,7 +1680,7 @@ const REGION_CATEGORIES = [
   },
   {
     key: "nature",
-    title: "🌿 Nature",
+    title: "Nature", icon: "leaf",
     max: 6,
     search: "national parks waterfalls and nature in",
     keywords: ["park", "waterfall", "falls", "mountain", "lake",
@@ -1637,7 +1689,7 @@ const REGION_CATEGORIES = [
   },
   {
     key: "cities",
-    title: "🏙️ Cities to Visit",
+    title: "Cities to Visit", icon: "building-2",
     max: 6,
     search: "major cities in",
     keywords: ["city", "capital", "town", "prefecture", "metropolis"],
@@ -1660,9 +1712,10 @@ async function loadThingsToDo() {
   exploreSection.hidden = false;
   exploreCity.textContent = destination.name;
   exploreGrid.innerHTML = "";
-  exploreNote.textContent = isWideArea
-    ? "✨ Finding the highlights of " + destination.name + "..."
-    : "🗺️ Searching for places nearby...";
+  exploreNote.innerHTML = icon(isWideArea ? "sparkles" : "map") + " ";
+  exploreNote.appendChild(document.createTextNode(isWideArea
+    ? "Finding the highlights of " + destination.name + "..."
+    : "Searching for places nearby..."));
   exploreNote.hidden = false;
 
   try {
@@ -1718,8 +1771,8 @@ async function loadThingsToDo() {
 
     const foundAnything = categories.some((c) => ideas[c.key].length > 0);
     if (!foundAnything) {
-      exploreNote.textContent =
-        "🗺️ No places found for this area. Try a nearby city instead.";
+      exploreNote.innerHTML =
+        icon("map") + " No places found for this area. Try a nearby city instead.";
       return;
     }
 
@@ -1727,8 +1780,8 @@ async function loadThingsToDo() {
     renderThingsToDo(ideas, categories);
   } catch (error) {
     if (destination !== currentDestination) return;
-    exploreNote.textContent =
-      "⚠️ Could not load places right now. Try again in a minute.";
+    exploreNote.innerHTML =
+      icon("triangle-alert") + " Could not load places right now. Try again in a minute.";
     exploreNote.hidden = false;
   }
 }
@@ -2039,7 +2092,8 @@ function renderThingsToDo(ideas, categories) {
     column.className = "explore-category";
 
     const heading = document.createElement("h4");
-    heading.textContent = category.title;
+    heading.innerHTML = category.icon ? icon(category.icon) + " " : "";
+    heading.appendChild(document.createTextNode(category.title));
     column.appendChild(heading);
 
     const list = document.createElement("ul");
@@ -2108,7 +2162,7 @@ async function setHomeLocation() {
 
     if (!data.results || data.results.length === 0) {
       timezoneContent.innerHTML =
-        "<p class='muted'>😕 Couldn't find \"" + name + "\". Try a nearby city.</p>";
+        "<p class='muted'>" + icon("frown") + " Couldn't find \"" + name + "\". Try a nearby city.</p>";
       return;
     }
 
@@ -2127,11 +2181,11 @@ async function setHomeLocation() {
       loadDistance();
     } else {
       timezoneContent.innerHTML =
-        "<p class='muted'>✅ Saved! Pick a destination to compare times.</p>";
+        "<p class='muted'>" + icon("check") + " Saved! Pick a destination to compare times.</p>";
     }
   } catch (error) {
     timezoneContent.innerHTML =
-      "<p class='muted'>⚠️ Could not look that up right now.</p>";
+      "<p class='muted'>" + icon("triangle-alert") + " Could not look that up right now.</p>";
   }
 }
 
@@ -2171,25 +2225,25 @@ async function loadTimeDifference() {
     const minutes = Math.abs(diffMinutes) % 60;
     let diffText;
     if (diffMinutes === 0) {
-      diffText = "🕐 Same time as " + home.name + "!";
+      diffText = icon("clock") + " Same time as " + home.name + "!";
     } else {
       diffText =
-        "🕐 " + destination.name + " is " + hours + "h" +
+        icon("clock") + " " + destination.name + " is " + hours + "h" +
         (minutes ? " " + minutes + "m" : "") +
         (diffMinutes > 0 ? " ahead of " : " behind ") +
         (diffMinutes > 0 ? home.name : home.name);
     }
 
     timezoneContent.innerHTML =
-      "<div class='tz-row'><span>🏠 " + home.name + "</span>" +
+      "<div class='tz-row'><span>" + icon("house") + " " + home.name + "</span>" +
       "<span class='tz-time'>" + homeTime.time + "</span></div>" +
-      "<div class='tz-row'><span>📍 " + destination.name + "</span>" +
+      "<div class='tz-row'><span>" + icon("map-pin") + " " + destination.name + "</span>" +
       "<span class='tz-time'>" + destTime.time + "</span></div>" +
       "<p class='tz-diff'>" + diffText + "</p>";
   } catch (error) {
     if (destination !== currentDestination) return;
     timezoneContent.innerHTML =
-      "<p class='muted'>⚠️ Could not compare the clocks right now.</p>";
+      "<p class='muted'>" + icon("triangle-alert") + " Could not compare the clocks right now.</p>";
   }
 }
 
@@ -2211,10 +2265,10 @@ function distanceInKm(lat1, lon1, lat2, lon2) {
 
 // Typical average speeds, in km/h — rough estimates for fun
 const TRAVEL_MODES = [
-  { icon: "✈️", label: "Flight", speed: 800 },
-  { icon: "🚆", label: "Train", speed: 90 },
-  { icon: "🚗", label: "Car", speed: 65 },
-  { icon: "🚢", label: "Ship", speed: 40 },
+  { icon: "plane", label: "Flight", speed: 800 },
+  { icon: "train-front", label: "Train", speed: 90 },
+  { icon: "car", label: "Car", speed: 65 },
+  { icon: "ship", label: "Ship", speed: 40 },
 ];
 
 // Turn hours into a friendly "2d 5h" / "3h 20m" text
@@ -2246,7 +2300,7 @@ function loadDistance() {
   let modesHTML = "<div class='travel-modes'>";
   for (const mode of TRAVEL_MODES) {
     modesHTML +=
-      "<div><span>" + mode.icon + " " + mode.label + "</span>" +
+      "<div><span>" + icon(mode.icon) + " " + mode.label + "</span>" +
       "<span>" + formatDuration(km / mode.speed) + "</span></div>";
   }
   modesHTML += "</div>";
@@ -2360,11 +2414,11 @@ async function loadEmergencyNumbers() {
     }
 
     emergencyContent.innerHTML =
-      "<div class='emg-row'><span>🚓 Police</span>" +
+      "<div class='emg-row'><span>" + icon("shield") + " Police</span>" +
       "<span class='emg-number'>" + (numbers.police || "112") + "</span></div>" +
-      "<div class='emg-row'><span>🚑 Ambulance</span>" +
+      "<div class='emg-row'><span>" + icon("ambulance") + " Ambulance</span>" +
       "<span class='emg-number'>" + (numbers.ambulance || "112") + "</span></div>" +
-      "<div class='emg-row'><span>🚒 Fire</span>" +
+      "<div class='emg-row'><span>" + icon("flame") + " Fire</span>" +
       "<span class='emg-number'>" + (numbers.fire || "112") + "</span></div>" +
       "<p class='muted emg-source'>For " + destination.country +
       " · <a href='" + EMERGENCY_PAGE +
@@ -2372,7 +2426,7 @@ async function loadEmergencyNumbers() {
   } catch (error) {
     if (destination !== currentDestination) return;
     emergencyContent.innerHTML =
-      "<p class='muted'>⚠️ Could not load the numbers. In most countries, 112 works.</p>";
+      "<p class='muted'>" + icon("triangle-alert") + " Could not load the numbers. In most countries, 112 works.</p>";
   }
 }
 
@@ -2445,7 +2499,7 @@ async function convertCurrency() {
       amount.toLocaleString() + " " + from + " = " +
       converted.toLocaleString(undefined, { maximumFractionDigits: 2 }) + " " + to;
   } catch (error) {
-    convertResult.textContent = "⚠️ Could not convert right now. Try again later.";
+    convertResult.innerHTML = icon("triangle-alert") + " Could not convert right now. Try again later.";
   }
 }
 
@@ -2474,10 +2528,10 @@ function isCurrentDestinationSaved() {
 // Update the Save button text depending on saved state
 function updateSaveButton() {
   if (isCurrentDestinationSaved()) {
-    saveButton.textContent = "❤️ Saved";
+    saveButton.innerHTML = icon("heart", true) + " Saved";
     saveButton.classList.add("saved");
   } else {
-    saveButton.textContent = "♡ Save Destination";
+    saveButton.innerHTML = icon("heart") + " Save Destination";
     saveButton.classList.remove("saved");
   }
 }
@@ -2512,7 +2566,8 @@ function renderSavedList() {
     // Clicking the name loads that destination again
     const nameButton = document.createElement("button");
     nameButton.className = "trip-name";
-    nameButton.textContent = "❤️ " + trip.name;
+    nameButton.innerHTML = icon("heart", true) + " ";
+    nameButton.appendChild(document.createTextNode(trip.name));
     nameButton.addEventListener("click", function () {
       // A saved trip is always a DESTINATION, even if the page is
       // still on the "where are you now?" step.
@@ -2525,7 +2580,7 @@ function renderSavedList() {
     // The little ✕ button removes the trip
     const removeButton = document.createElement("button");
     removeButton.className = "remove-trip";
-    removeButton.textContent = "✕";
+    removeButton.innerHTML = icon("x");
     removeButton.title = "Remove " + trip.name;
     removeButton.addEventListener("click", function () {
       const remaining = getSavedDestinations().filter(

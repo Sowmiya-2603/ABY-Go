@@ -908,3 +908,21 @@ body {
     font-size: 1.5rem;
   }
 }
+
+/* ---------- Lucide icons (replace the old emojis) ---------- */
+svg.icon {
+  width: 1.05em;
+  height: 1.05em;
+  display: inline-block;
+  vertical-align: -0.16em;
+  flex-shrink: 0;
+}
+svg.icon-filled { fill: currentColor; }
+.weather-icon svg.icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  vertical-align: middle;
+}
+.card h3 svg.icon, .explore-section h3 svg.icon, .saved-section h2 svg.icon {
+  margin-right: 4px;
+}
