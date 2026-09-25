@@ -206,9 +206,13 @@ body {
 }
 
 /* ---------- Interactive globe ---------- */
-.hero-hint {
+/* ".hero .hero-hint" so it outranks the ".hero p" width limit,
+   keeping the whole hint on a single line */
+.hero .hero-hint {
   font-size: 1.1rem !important;
   opacity: 0.9;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .globe-wrap {
