@@ -112,8 +112,49 @@ const ICONS = {
   "flame": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4\" /></svg>",
   "x": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg>",
 };
+// Each icon gets a colour that suits what it shows
+const ICON_COLORS = {
+  "sun": "#fbbf24",
+  "cloud-sun": "#f5c95c",
+  "cloud": "#94a3b8",
+  "cloud-fog": "#94a3b8",
+  "cloud-drizzle": "#60a5fa",
+  "cloud-rain": "#60a5fa",
+  "snowflake": "#bae6fd",
+  "cloud-snow": "#bae6fd",
+  "cloud-lightning": "#facc15",
+  "thermometer": "#f87171",
+  "sunrise": "#fbbf24",
+  "sunset": "#fb923c",
+  "map-pin": "#f87171",
+  "clock": "#93c5fd",
+  "sparkles": "#e8cf9e",
+  "ferris-wheel": "#f472b6",
+  "landmark": "#d9c08c",
+  "coffee": "#d2a679",
+  "leaf": "#4ade80",
+  "building-2": "#93c5fd",
+  "map": "#86efac",
+  "triangle-alert": "#fbbf24",
+  "frown": "#fbbf24",
+  "waves": "#60a5fa",
+  "house": "#93c5fd",
+  "target": "#f87171",
+  "globe": "#7dd3fc",
+  "check": "#4ade80",
+  "plane": "#93c5fd",
+  "train-front": "#a5b4fc",
+  "car": "#fca5a5",
+  "ship": "#7dd3fc",
+  "shield": "#60a5fa",
+  "ambulance": "#f87171",
+  "flame": "#fb923c",
+  "heart": "#fb7185",
+};
 function icon(name, filled) {
   let svg = ICONS[name] || "";
+  const color = ICON_COLORS[name];
+  if (color) svg = svg.replace("<svg ", '<svg style="color:' + color + '" ');
   if (filled) svg = svg.replace('class="icon"', 'class="icon icon-filled"');
   return svg;
 }
