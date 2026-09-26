@@ -956,11 +956,6 @@ svg.icon-filled { fill: currentColor; }
     font-size: 0.88rem;
     white-space: nowrap;
   }
-  /* the "Explore" link just points at the top of the page —
-     drop it on phones so the bar always fits on one line */
-  .nav-links a[href="#explore"] {
-    display: none;
-  }
   .nav-back {
     margin-left: 12px;
     padding: 6px 12px;
