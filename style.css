@@ -1154,6 +1154,11 @@ svg.icon-filled { fill: currentColor; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+}
+.intro.play video {
+  opacity: 1;
 }
 .intro.done {
   opacity: 0;
