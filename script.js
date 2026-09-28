@@ -2684,11 +2684,6 @@ function endIntro() {
 if (introEl && introVideo) {
   introVideo.addEventListener("ended", endIntro);
   introVideo.addEventListener("error", endIntro);
-  // start the fade-out just before the last frame, so the page
-  // is revealed in one smooth motion
-  introVideo.addEventListener("timeupdate", function () {
-    if (introVideo.duration && introVideo.currentTime > introVideo.duration - 0.8) endIntro();
-  });
   document.getElementById("intro-skip").addEventListener("click", endIntro);
   // If the browser pauses the video (battery saver, hidden tab...),
   // try once more; if it still refuses, reveal the page instead of
