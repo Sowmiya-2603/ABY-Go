@@ -1165,18 +1165,3 @@ svg.icon-filled { fill: currentColor; }
   visibility: hidden;
   pointer-events: none;
 }
-.intro-skip {
-  position: absolute;
-  right: 26px;
-  bottom: 24px;
-  padding: 8px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 999px;
-  background: rgba(6, 10, 22, 0.55);
-  color: rgba(238, 242, 249, 0.85);
-  font: 700 0.85rem "Nunito", sans-serif;
-  cursor: pointer;
-}
-.intro-skip:hover {
-  background: rgba(59, 130, 246, 0.35);
-}

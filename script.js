@@ -2686,7 +2686,6 @@ if (introEl && introVideo) {
   introVideo.addEventListener("playing", function () { introStarted = true; });
   introVideo.addEventListener("ended", endIntro);
   introVideo.addEventListener("error", endIntro);
-  document.getElementById("intro-skip").addEventListener("click", endIntro);
   // a tap restarts it if the browser paused it
   document.addEventListener("pointerdown", function () {
     if (!introEl.classList.contains("done") && introVideo.paused && !introVideo.ended) {
