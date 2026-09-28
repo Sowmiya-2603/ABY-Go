@@ -2682,25 +2682,27 @@ function endIntro() {
   setTimeout(function () { introEl.remove(); }, 1000);
 }
 if (introEl && introVideo) {
+  let introStarted = false;
+  introVideo.addEventListener("playing", function () { introStarted = true; });
   introVideo.addEventListener("ended", endIntro);
   introVideo.addEventListener("error", endIntro);
   document.getElementById("intro-skip").addEventListener("click", endIntro);
-  // If the browser pauses the video (battery saver, hidden tab...),
-  // try once more; if it still refuses, reveal the page instead of
-  // sitting on a frozen frame.
-  introVideo.addEventListener("pause", function () {
-    if (introVideo.ended || introEl.classList.contains("done")) return;
-    const retry = introVideo.play();
-    if (retry && retry.catch) retry.catch(endIntro);
-    setTimeout(function () { if (introVideo.paused && !introVideo.ended) endIntro(); }, 700);
-  });
+  // a tap restarts it if the browser paused it
   document.addEventListener("pointerdown", function () {
-    if (!introEl.classList.contains("done") && introVideo.paused) introVideo.play();
+    if (!introEl.classList.contains("done") && introVideo.paused && !introVideo.ended) {
+      introVideo.play();
+    }
   }, { once: true });
   const playing = introVideo.play();
   introEl.classList.add("play");
-  if (playing && playing.catch) playing.catch(endIntro);
-  setTimeout(endIntro, 9000); // safety net
+  if (playing && playing.catch) {
+    playing.catch(function () { if (!introStarted) endIntro(); });
+  }
+  // if it can't START within 7s (autoplay blocked, dead connection),
+  // reveal the page; once playing, buffering pauses are tolerated,
+  // with a 25s hard cap so it can never get stuck.
+  setTimeout(function () { if (!introStarted) endIntro(); }, 7000);
+  setTimeout(endIntro, 25000);
 } else if (introEl) {
   endIntro();
 }
