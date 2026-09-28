@@ -2669,6 +2669,48 @@ if (getHomeLocation()) {
 applyStageText();
 drawGlobe();        // draw the plain globe right away
 /* ------------------------------------------------------------
+   OPENING TITLE VIDEO
+   A short brand video that fades in, plays once, and fades out to
+   reveal the page. If the browser refuses to autoplay it (battery
+   saver etc.), or anything stalls, we skip straight to the page.
+   ------------------------------------------------------------ */
+const introEl = document.getElementById("intro");
+const introVideo = document.getElementById("intro-video");
+function endIntro() {
+  if (!introEl || introEl.classList.contains("done")) return;
+  introEl.classList.add("done");
+  setTimeout(function () { introEl.remove(); }, 1000);
+}
+if (introEl && introVideo) {
+  introVideo.addEventListener("ended", endIntro);
+  introVideo.addEventListener("error", endIntro);
+  // start the fade-out just before the last frame, so the page
+  // is revealed in one smooth motion
+  introVideo.addEventListener("timeupdate", function () {
+    if (introVideo.duration && introVideo.currentTime > introVideo.duration - 0.8) endIntro();
+  });
+  document.getElementById("intro-skip").addEventListener("click", endIntro);
+  // If the browser pauses the video (battery saver, hidden tab...),
+  // try once more; if it still refuses, reveal the page instead of
+  // sitting on a frozen frame.
+  introVideo.addEventListener("pause", function () {
+    if (introVideo.ended || introEl.classList.contains("done")) return;
+    const retry = introVideo.play();
+    if (retry && retry.catch) retry.catch(endIntro);
+    setTimeout(function () { if (introVideo.paused && !introVideo.ended) endIntro(); }, 700);
+  });
+  document.addEventListener("pointerdown", function () {
+    if (!introEl.classList.contains("done") && introVideo.paused) introVideo.play();
+  }, { once: true });
+  const playing = introVideo.play();
+  introEl.classList.add("play");
+  if (playing && playing.catch) playing.catch(endIntro);
+  setTimeout(endIntro, 9000); // safety net
+} else if (introEl) {
+  endIntro();
+}
+
+/* ------------------------------------------------------------
    LOADING SCREEN
    Covers the page while the globe photo and country shapes load,
    then fades out. Never shows for less than ~1.6s (so it doesn't
