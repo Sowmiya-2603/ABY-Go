@@ -255,7 +255,9 @@ function loadEarthTexture() {
       height: c.height,
     };
     drawGlobe();
+    loaderReady();
   };
+  img.onerror = loaderReady;
   img.src = "earth.jpg?v=2"; // bump this if the photo file changes
 }
 
@@ -338,6 +340,7 @@ async function loadWorldShapes() {
     worldShapes = null;
   }
   drawGlobe();
+  loaderReady();
 }
 
 /*
@@ -2665,6 +2668,26 @@ if (getHomeLocation()) {
 }
 applyStageText();
 drawGlobe();        // draw the plain globe right away
+/* ------------------------------------------------------------
+   LOADING SCREEN
+   Covers the page while the globe photo and country shapes load,
+   then fades out. Never shows for less than ~1.6s (so it doesn't
+   blink) and never longer than 5s (so it can't get stuck).
+   ------------------------------------------------------------ */
+const loaderEl = document.getElementById("loader");
+const loaderShownAt = performance.now();
+let loaderPending = 2; // the earth photo + the country shapes
+function hideLoader() {
+  if (!loaderEl || loaderEl.classList.contains("done")) return;
+  const wait = Math.max(0, 1600 - (performance.now() - loaderShownAt));
+  setTimeout(function () { loaderEl.classList.add("done"); }, wait);
+}
+function loaderReady() {
+  loaderPending -= 1;
+  if (loaderPending <= 0) hideLoader();
+}
+setTimeout(hideLoader, 5000); // safety net
+
 loadWorldShapes();  // then load the country shapes onto it
 loadEarthTexture(); // and the real satellite photo of Earth
 startAutoSpin();    // gently spin until the user grabs it
