@@ -36,21 +36,21 @@ html {
   display: none !important;
 }
 
-/* Headings use Playfair Display Bold, a classic elegant serif */
+/* Headings use Poppins, a friendly geometric sans that matches the logo */
 h1, h2, .nav-logo {
-  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
 }
 
 /* Small headings (card titles) are quiet, spaced-out labels */
 h3, h4 {
-  font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 600;
 }
 
 body {
-  font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   color: var(--text);
   /* Night-sky background: almost black at the top, with a soft
      blue glow rising from the bottom centre. "fixed" keeps it
@@ -192,7 +192,7 @@ body {
 
 .hero h1 {
   /* grows with the window, up to a grand 5rem */
-  font-size: clamp(2.8rem, 5.2vw, 5rem);
+  font-size: clamp(2.5rem, 4.6vw, 4.2rem);
   font-weight: 800;
   line-height: 1.1;
   margin-bottom: 22px;
@@ -550,7 +550,7 @@ body {
 .distance-value {
   font-size: 2rem;
   font-weight: 700;
-  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
   color: var(--gold);
 }
 
@@ -608,7 +608,7 @@ body {
 .weather-temp {
   font-size: 2.5rem;
   font-weight: 700;
-  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
   color: var(--gold);
 }
 
@@ -722,7 +722,7 @@ body {
 }
 
 .explore-section h3 {
-  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
   text-transform: none;
   letter-spacing: 0;
   margin-bottom: 16px;
