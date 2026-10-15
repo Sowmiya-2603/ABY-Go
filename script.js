@@ -1474,6 +1474,21 @@ async function showDestination(destination) {
 
 // Open-Meteo describes weather with a number code.
 // This little table turns the code into words + an emoji icon.
+// The one place an emoji stays: the big reading next to the
+// temperature. The forecast rows below use the lucide icons.
+const WEATHER_EMOJI = {
+  "sun": "☀️",
+  "cloud-sun": "⛅",
+  "cloud": "☁️",
+  "cloud-fog": "🌫️",
+  "cloud-drizzle": "🌦️",
+  "cloud-rain": "🌧️",
+  "snowflake": "❄️",
+  "cloud-snow": "🌨️",
+  "cloud-lightning": "⛈️",
+  "thermometer": "🌡️",
+};
+
 function describeWeather(code) {
   if (code === 0) return { text: "Clear sky", icon: "sun" };
   if (code === 1) return { text: "Mainly clear", icon: "cloud-sun" };
@@ -1539,7 +1554,7 @@ async function loadWeather() {
     }
 
     weatherContent.innerHTML =
-      "<span class='weather-icon'>" + icon(weather.icon) + "</span> " +
+      "<span class='weather-icon'>" + (WEATHER_EMOJI[weather.icon] || "🌡️") + "</span> " +
       "<span class='weather-temp'>" + Math.round(current.temperature_2m) + "°C</span>" +
       "<p>" + weather.text + "</p>" +
       "<p class='weather-detail'>" + chip("thermometer") + "Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
