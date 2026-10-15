@@ -73,6 +73,9 @@ const noSavedMessage = document.getElementById("no-saved-message");
    icon("name", true) returns it filled in (used for saved hearts).
    ------------------------------------------------------------ */
 const ICONS = {
+  "umbrella": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12 13v7a2 2 0 0 0 4 0\" /><path d=\"M12 2v2\" /><path d=\"M20.992 13a1 1 0 0 0 .97-1.274 10.284 10.284 0 0 0-19.923 0A1 1 0 0 0 3 13z\" /></svg>",
+  "shirt": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z\" /></svg>",
+  "glasses": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"6\" cy=\"15\" r=\"4\" /><circle cx=\"18\" cy=\"15\" r=\"4\" /><path d=\"M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2\" /><path d=\"M2.5 13 5 7c.7-1.3 1.4-2 3-2\" /><path d=\"M21.5 13 19 7c-.7-1.3-1.5-2-3-2\" /></svg>",
   "droplets": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z\" /><path d=\"M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97\" /></svg>",
   "wind": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12.8 19.6A2 2 0 1 0 14 16H2\" /><path d=\"M17.5 8a2.5 2.5 0 1 1 2 4H2\" /><path d=\"M9.8 4.4A2 2 0 1 1 11 8H2\" /></svg>",
   "globe": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /><path d=\"M2 12h20\" /></svg>",
@@ -127,6 +130,9 @@ const ICON_COLORS = {
   "cloud-lightning": "#facc15",
   "thermometer": "#f87171",
   "droplets": "#60a5fa",
+  "umbrella": "#60a5fa",
+  "shirt": "#c4b5fd",
+  "glasses": "#fbbf24",
   "wind": "#7dd3fc",
   "sunrise": "#fbbf24",
   "sunset": "#fb923c",
@@ -1474,6 +1480,38 @@ async function showDestination(destination) {
 
 // Open-Meteo describes weather with a number code.
 // This little table turns the code into words + an emoji icon.
+/* What to pack: clothing and props suggested from the live
+   weather - umbrella for rain, layers by temperature, and so on. */
+function packingSuggestions(current, daily) {
+  const code = current.weather_code;
+  const t = current.temperature_2m;
+  const rainy = function (c) { return (c >= 51 && c <= 82) || c >= 95; };
+  const out = [];
+
+  if (rainy(code)) {
+    out.push({ icon: "umbrella", text: "Umbrella or raincoat" });
+  } else if (daily && daily.weather_code && daily.weather_code.some(rainy)) {
+    out.push({ icon: "umbrella", text: "Umbrella, rain in the forecast" });
+  }
+  if (code >= 71 && code <= 86) {
+    out.push({ icon: "snowflake", text: "Warm coat, gloves and boots" });
+  }
+
+  if (t < 5) out.push({ icon: "snowflake", text: "Thermals and a heavy jacket" });
+  else if (t < 15) out.push({ icon: "shirt", text: "A warm jacket" });
+  else if (t < 22) out.push({ icon: "shirt", text: "Light layers for the evening" });
+  else if (t < 30) out.push({ icon: "shirt", text: "Light cotton clothes" });
+  else out.push({ icon: "sun", text: "Very light clothes, a cap and water" });
+
+  if ((code === 0 || code === 1) && t >= 18) {
+    out.push({ icon: "glasses", text: "Sunglasses and sunscreen" });
+  }
+  if (current.wind_speed_10m >= 25) {
+    out.push({ icon: "wind", text: "A windbreaker" });
+  }
+  return out.slice(0, 4);
+}
+
 // The one place an emoji stays: the big reading next to the
 // temperature. The forecast rows below use the lucide icons.
 const WEATHER_EMOJI = {
@@ -1553,6 +1591,16 @@ async function loadWeather() {
       forecastHTML += "</div>";
     }
 
+    // What to wear / carry, based on this weather
+    let packHTML = "";
+    const pack = packingSuggestions(current, data.daily);
+    if (pack.length > 0) {
+      packHTML = "<div class='pack'><p class='pack-title'>What to pack</p>" +
+        pack.map(function (p) {
+          return "<p class='weather-detail'>" + chip(p.icon) + p.text + "</p>";
+        }).join("") + "</div>";
+    }
+
     weatherContent.innerHTML =
       "<span class='weather-icon'>" + (WEATHER_EMOJI[weather.icon] || "🌡️") + "</span> " +
       "<span class='weather-temp'>" + Math.round(current.temperature_2m) + "°C</span>" +
@@ -1560,7 +1608,8 @@ async function loadWeather() {
       "<p class='weather-detail'>" + chip("thermometer") + "Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
       "<p class='weather-detail'>" + chip("droplets") + "Humidity: " + current.relative_humidity_2m + "%</p>" +
       "<p class='weather-detail'>" + chip("wind") + "Wind: " + Math.round(current.wind_speed_10m) + " km/h</p>" +
-      forecastHTML;
+      forecastHTML +
+      packHTML;
   } catch (error) {
     if (destination !== currentDestination) return;
     weatherContent.innerHTML = "<p class='muted'>" + icon("triangle-alert") + " Could not load the weather right now.</p>";

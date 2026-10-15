@@ -1096,3 +1096,19 @@ svg.icon-filled { fill: currentColor; }
   height: 1.05em;
   vertical-align: 0;
 }
+
+
+/* ---------- "What to pack" (inside the weather card) ---------- */
+.pack {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pack-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
