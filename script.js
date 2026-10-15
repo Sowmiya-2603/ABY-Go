@@ -176,13 +176,13 @@ function applyStageText() {
   // (The "if" guard keeps an old cached page from crashing here.)
   if (navBackButton) navBackButton.hidden = pickingHome;
   if (pickingHome) {
-    heroTitle.innerHTML = 'Where are you <em class="accent-word">now?</em>';
+    heroTitle.textContent = "Where are you now?";
     heroSubtitle.textContent = "First, set your starting point.";
     heroHint.innerHTML =
       icon("globe") + " Spin the globe and click your home, or type it below.";
     searchInput.placeholder = "type your city, e.g. Chennai";
   } else {
-    heroTitle.innerHTML = 'Where do you plan to <em class="accent-word">explore?</em>';
+    heroTitle.textContent = "Where do you plan to explore?";
     heroSubtitle.textContent =
       "Weather, destination info, daylight and currency, all in one place.";
     heroHint.innerHTML =
@@ -1324,8 +1324,8 @@ function playPlaneTransition() {
   preview.appendChild(navCopy);
 
   const heroCopy = hero.cloneNode(true);
-  heroCopy.querySelector("#hero-title").innerHTML =
-    'Where do you plan to <em class="accent-word">explore?</em>';
+  heroCopy.querySelector("#hero-title").textContent =
+    "Where do you plan to explore?";
   heroCopy.querySelector("#hero-subtitle").textContent =
     "Weather, destination info, daylight and currency, all in one place.";
   heroCopy.querySelector("#hero-hint").innerHTML =
