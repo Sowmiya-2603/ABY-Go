@@ -1060,3 +1060,20 @@ svg.icon-filled { fill: currentColor; }
   visibility: hidden;
   pointer-events: none;
 }
+
+
+/* ---------- Typography from the brand film ---------- */
+/* The second half of a headline turns gold italic serif,
+   like "Spin the globe." / "Know who to call." */
+.accent-word {
+  font-style: italic;
+  color: var(--gold);
+}
+
+/* Big numbers are set in the serif, like the film's stat cards */
+.weather-temp,
+.distance-value,
+.emg-row .emg-number,
+.tz-row .tz-time {
+  font-family: "Playfair Display", Georgia, serif;
+}
