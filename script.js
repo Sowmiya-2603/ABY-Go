@@ -1533,9 +1533,9 @@ async function loadWeather() {
       "<span class='weather-icon'>" + weather.icon + "</span> " +
       "<span class='weather-temp'>" + Math.round(current.temperature_2m) + "°C</span>" +
       "<p>" + weather.text + "</p>" +
-      "<p class='weather-detail'>Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
-      "<p class='weather-detail'>Humidity: " + current.relative_humidity_2m + "%</p>" +
-      "<p class='weather-detail'>Wind: " + Math.round(current.wind_speed_10m) + " km/h</p>" +
+      "<p class='weather-detail'>🌡️ Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
+      "<p class='weather-detail'>💧 Humidity: " + current.relative_humidity_2m + "%</p>" +
+      "<p class='weather-detail'>💨 Wind: " + Math.round(current.wind_speed_10m) + " km/h</p>" +
       forecastHTML;
   } catch (error) {
     if (destination !== currentDestination) return;
