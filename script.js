@@ -2680,6 +2680,7 @@ function endIntro() {
   if (!introEl || introEl.classList.contains("done")) return;
   introEl.classList.add("done");
   setTimeout(function () { introEl.remove(); }, 1000);
+  startWelcomeFilm();
 }
 if (introEl && introVideo) {
   let introStarted = false;
@@ -2708,15 +2709,24 @@ if (introEl && introVideo) {
 
 /* ------------------------------------------------------------
    LOADING SCREEN
-   Covers the page while the globe photo and country shapes load,
-   then fades out. Never shows for less than ~1.6s (so it doesn't
+   Shown after "Start your journey" on the welcome screen. It covers
+   the hand-over to the globe and stays until the globe photo and
+   country shapes have loaded (they start loading in the background
+   straight away). Never shows for less than ~1.6s (so it doesn't
    blink) and never longer than 5s (so it can't get stuck).
    ------------------------------------------------------------ */
 const loaderEl = document.getElementById("loader");
-const loaderShownAt = performance.now();
+let loaderShownAt = 0;
 let loaderPending = 2; // the earth photo + the country shapes
+function showLoader() {
+  if (!loaderEl) return;
+  loaderShownAt = performance.now();
+  loaderEl.hidden = false; // un-hiding replays its entrance animations
+  if (loaderPending <= 0) hideLoader();
+  setTimeout(hideLoader, 5000); // safety net
+}
 function hideLoader() {
-  if (!loaderEl || loaderEl.classList.contains("done")) return;
+  if (!loaderEl || loaderEl.hidden || loaderEl.classList.contains("done")) return;
   const wait = Math.max(0, 1600 - (performance.now() - loaderShownAt));
   setTimeout(function () { loaderEl.classList.add("done"); }, wait);
 }
@@ -2724,7 +2734,71 @@ function loaderReady() {
   loaderPending -= 1;
   if (loaderPending <= 0) hideLoader();
 }
-setTimeout(hideLoader, 5000); // safety net
+
+/* ------------------------------------------------------------
+   WELCOME SCREEN
+   Revealed once the intro and the loader have both faded. The
+   launch film starts playing right then (muted, since browsers
+   block autoplay with sound); "Tap for sound" turns it up.
+   "Start your journey" fades the screen away to the globe.
+   ------------------------------------------------------------ */
+const welcomeEl = document.getElementById("welcome");
+const welcomeVideo = document.getElementById("welcome-video");
+const filmSound = document.getElementById("film-sound");
+
+// the loader fades in over the welcome screen, which is then
+// removed underneath it
+function closeWelcome() {
+  if (!welcomeEl || welcomeEl.classList.contains("done")) return;
+  welcomeVideo.pause();
+  showLoader();
+  setTimeout(function () {
+    welcomeEl.classList.add("done");
+    welcomeEl.remove();
+  }, 600);
+}
+
+// called when the intro finishes; plays the film once nothing
+// is covering the welcome screen any more
+// (looks elements up itself, as the intro may end before the
+// constants above it are set up)
+function startWelcomeFilm() {
+  const welcome = document.getElementById("welcome");
+  const intro = document.getElementById("intro");
+  if (!welcome || welcome.classList.contains("done")) return;
+  if (!intro || intro.classList.contains("done")) {
+    document.getElementById("welcome-video").play().catch(function () {});
+  }
+}
+
+if (welcomeEl) {
+  document.getElementById("welcome-start").addEventListener("click", closeWelcome);
+
+  filmSound.addEventListener("click", function () {
+    welcomeVideo.muted = false;
+    welcomeVideo.currentTime = 0; // hear it from the start
+    welcomeVideo.play();
+    welcomeVideo.controls = true;
+    filmSound.hidden = true;
+  });
+
+  // The dashed route is drawn in a 1200x600 box stretched over the
+  // screen; scale the plane's flight path the same way.
+  const welcomePlane = document.querySelector(".welcome-plane");
+  function fitPlanePath() {
+    const sx = welcomeEl.clientWidth / 1200;
+    const sy = welcomeEl.clientHeight / 600;
+    const pts = [-40, 470, 220, 380, 330, 140, 600, 170, 980, 330, 1240, 90].map(function (n, i) {
+      return Math.round(n * (i % 2 ? sy : sx));
+    });
+    welcomePlane.style.offsetPath =
+      'path("M' + pts[0] + " " + pts[1] + " C " + pts[2] + " " + pts[3] + ", " +
+      pts[4] + " " + pts[5] + ", " + pts[6] + " " + pts[7] + " S " +
+      pts[8] + " " + pts[9] + ", " + pts[10] + " " + pts[11] + '")';
+  }
+  fitPlanePath();
+  window.addEventListener("resize", fitPlanePath);
+}
 
 loadWorldShapes();  // then load the country shapes onto it
 loadEarthTexture(); // and the real satellite photo of Earth

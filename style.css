@@ -1049,7 +1049,9 @@ svg.icon-filled { fill: currentColor; }
       #2e4d80 0%, #1a2b4a 40%, #0b1222 70%, #04060c 100%
     ) #04060c;
   transition: opacity 0.65s ease, visibility 0.65s;
+  animation: loader-in 0.5s ease; /* fades in over the welcome screen */
 }
+@keyframes loader-in { from { opacity: 0; } to { opacity: 1; } }
 .loader.done {
   opacity: 0;
   visibility: hidden;
@@ -1164,4 +1166,264 @@ svg.icon-filled { fill: currentColor; }
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+}
+
+
+/* ---------- Welcome screen ----------
+   Sits just under the loader (z-index 9997), so the loader can fade
+   in over it after "Start your journey". Same night sky, gold accent and Playfair headline
+   as the rest of the app. "Start your journey" fades it away. */
+.welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  overflow-y: auto;
+  background: radial-gradient(
+      120% 100% at 50% 115%,
+      #2e4d80 0%, #1a2b4a 40%, #0b1222 70%, #04060c 100%
+    ) #04060c;
+  transition: opacity 0.8s ease, visibility 0.8s;
+}
+.welcome.done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* the dashed flight route across the sky, and a plane flying it */
+.welcome-path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.welcome-plane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* offset-path is set from script.js so it matches the
+     stretched dashed route at any screen size */
+  offset-rotate: auto 45deg; /* the icon's nose points up-right */
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+  animation: welcome-fly 14s linear infinite;
+  pointer-events: none;
+}
+@keyframes welcome-fly {
+  from { offset-distance: 0%; opacity: 0; }
+  6%   { opacity: 1; }
+  94%  { opacity: 1; }
+  to   { offset-distance: 100%; opacity: 0; }
+}
+
+.welcome-inner {
+  position: relative;
+  width: 100%;
+  max-width: 1180px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-areas:
+    "copy film"
+    "features features";
+  align-items: center;
+  gap: 40px 56px;
+}
+.welcome-copy {
+  grid-area: copy;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+/* each piece rises in, one after another */
+.welcome-copy > *, .welcome-film, .welcome-features {
+  animation: loader-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.welcome-copy > :nth-child(2) { animation-delay: 0.08s; }
+.welcome-copy > :nth-child(3) { animation-delay: 0.16s; }
+.welcome-copy > :nth-child(4) { animation-delay: 0.26s; }
+.welcome-copy > :nth-child(5) { animation-delay: 0.36s; }
+.welcome-copy > :nth-child(6) { animation-delay: 0.44s; }
+.welcome-film { animation-delay: 0.3s; }
+.welcome-features { animation-delay: 0.55s; }
+
+.welcome-eyebrow {
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.welcome-wm {
+  width: min(280px, 64vw);
+  height: auto;
+  margin-bottom: 22px;
+}
+.welcome-title {
+  font-size: clamp(2rem, 4.2vw, 3.2rem);
+  line-height: 1.12;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+.welcome-title em {
+  font-style: italic;
+  color: var(--gold);
+}
+.welcome-sub {
+  max-width: 460px;
+  color: var(--text-light);
+  font-size: 1.08rem;
+  margin-bottom: 30px;
+}
+
+.welcome-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 32px;
+  border: none;
+  border-radius: 999px;
+  /* the wordmark's blue-to-teal gradient */
+  background: linear-gradient(90deg, #1d6fe0 0%, #2a8be8 45%, #22c3a6 100%);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 8px 28px rgba(42, 139, 232, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.welcome-start svg.icon {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}
+.welcome-start:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 34px rgba(42, 139, 232, 0.6);
+}
+.welcome-start:hover svg.icon {
+  transform: translateX(4px);
+}
+.welcome-start:focus-visible,
+.film-sound:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+.welcome-foot {
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  opacity: 0.8;
+}
+
+/* ---- the film player: a glass card like the app's own cards ---- */
+.welcome-film {
+  grid-area: film;
+  padding: 14px;
+  border-radius: 22px;
+  background: var(--card-bg);
+  border: var(--card-border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 80px rgba(60, 120, 230, 0.18);
+  backdrop-filter: blur(8px);
+}
+.film-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #04060c;
+}
+.film-frame video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+/* "Tap for sound" pill; hidden once the sound is on */
+.film-sound {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(10, 18, 38, 0.65);
+  backdrop-filter: blur(6px);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  animation: film-pulse 2.4s ease-out infinite;
+  transition: background 0.15s ease;
+}
+.film-sound svg.icon { width: 18px; height: 18px; }
+.film-sound:hover { background: rgba(29, 111, 224, 0.8); }
+@keyframes film-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(217, 192, 140, 0.5); }
+  70%  { box-shadow: 0 0 0 14px rgba(217, 192, 140, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(217, 192, 140, 0); }
+}
+
+/* the seven things the app tells you, echoing the badge's icon row */
+.welcome-features {
+  grid-area: features;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.welcome-features li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--card-bg);
+  border: var(--card-border);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  backdrop-filter: blur(6px);
+}
+.welcome-features svg.icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* stack: words, then film, then features, all centred */
+@media (max-width: 900px) {
+  .welcome { align-items: flex-start; }
+  .welcome-inner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "copy" "film" "features";
+    gap: 32px;
+    max-width: 640px;
+  }
+  .welcome-copy { align-items: center; text-align: center; }
+  .welcome-sub { margin-left: auto; margin-right: auto; }
+}
+@media (max-width: 600px) {
+  .welcome-sub { font-size: 1rem; margin-bottom: 24px; }
+  .welcome-film { padding: 10px; border-radius: 18px; }
+  .welcome-features { gap: 8px; }
+  .welcome-features li { font-size: 0.82rem; padding: 6px 11px; }
+  .welcome-plane { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-plane { display: none; }
+  .welcome-copy > *, .welcome-film, .welcome-features, .film-sound { animation: none; }
 }

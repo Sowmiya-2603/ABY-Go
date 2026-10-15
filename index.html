@@ -14,7 +14,7 @@
   />
   <!-- The ?v= number forces browsers to fetch the newest files
        instead of old cached ones. Bump it when you change them. -->
-  <link rel="stylesheet" href="style.css?v=74" />
+  <link rel="stylesheet" href="style.css?v=78" />
 </head>
 <body>
 
@@ -24,9 +24,10 @@
     <video id="intro-video" src="intro.mp4?v=3" muted playsinline preload="auto"></video>
   </div>
 
-  <!-- Loading screen: shows the badge while the globe and its
-       satellite photo get ready, then fades away (see script.js) -->
-  <div id="loader" class="loader" aria-hidden="true">
+  <!-- Loading screen: appears after "Start your journey" and shows
+       the badge while the globe and its satellite photo get ready,
+       then fades away (see script.js) -->
+  <div id="loader" class="loader" aria-hidden="true" hidden>
     <div class="loader-stars"></div>
     <div class="loader-orbit-wrap">
       <svg class="loader-ring" viewBox="0 0 220 220">
@@ -39,6 +40,58 @@
     <img src="wordmark.png" alt="ABY Go" class="loader-wm">
     <p class="loader-msg">Preparing your journey<span class="ldots"><i>.</i><i>.</i><i>.</i></span></p>
   </div>
+
+  <!-- Welcome screen: the first thing you see after the intro.
+       "Start your journey" brings up the loader, which then fades
+       to reveal the globe (see script.js) -->
+  <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+    <div class="loader-stars"></div>
+    <!-- dashed flight path with a plane gliding along it -->
+    <svg class="welcome-path" viewBox="0 0 1200 600" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-40 470 C 220 380, 330 140, 600 170 S 980 330, 1240 90"
+        fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="2.5"
+        stroke-dasharray="10 14" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <span class="welcome-plane" aria-hidden="true"><svg style="color:#ffffff;width:30px;height:30px" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" /></svg></span>
+
+    <div class="welcome-inner">
+      <div class="welcome-copy">
+        <p class="welcome-eyebrow">Welcome to</p>
+        <img src="wordmark.png" alt="ABY Go" class="welcome-wm" />
+        <h1 id="welcome-title" class="welcome-title">Know it all, <em>before you go.</em></h1>
+        <p class="welcome-sub">Spin the globe, pick a place, and see its weather, daylight, local time, money and must-sees, all in one glance.</p>
+        <button id="welcome-start" class="welcome-start" type="button">
+          Start your journey
+          <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+        </button>
+        <p class="welcome-foot">Free · no sign-up · your trips stay on this device</p>
+      </div>
+
+      <!-- The launch film starts (muted, as browsers require) the
+           moment the welcome screen is revealed; tap for sound -->
+      <figure class="welcome-film">
+        <div class="film-frame">
+          <video id="welcome-video" src="film-launch.mp4" poster="film-launch.jpg"
+            preload="auto" muted playsinline loop></video>
+          <button id="film-sound" class="film-sound" type="button">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /><path d="M16 9a5 5 0 0 1 0 6" /><path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></svg>
+            Tap for sound
+          </button>
+        </div>
+      </figure>
+
+      <ul class="welcome-features">
+        <li><svg class="icon" style="color:#f5c95c" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 2v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="M20 12h2" /><path d="m19.07 4.93-1.41 1.41" /><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128" /><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z" /></svg> Weather</li>
+        <li><svg class="icon" style="color:#fbbf24" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg> Sunrise &amp; Sunset</li>
+        <li><svg class="icon" style="color:#93c5fd" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg> Time Zones</li>
+        <li><svg class="icon" style="color:#86efac" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m16 3 4 4-4 4" /><path d="M20 7H4" /><path d="m8 21-4-4 4-4" /><path d="M4 17h16" /></svg> Currency</li>
+        <li><svg class="icon" style="color:#7dd3fc" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="12" cy="12" r="10" /><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /></svg> Travel Time</li>
+        <li><svg class="icon" style="color:#e8cf9e" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /></svg> Places to Explore</li>
+        <li><svg class="icon" style="color:#f87171" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M7 18v-6a5 5 0 1 1 10 0v6" /><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z" /><path d="M12 12v6" /></svg> Emergency Contacts</li>
+      </ul>
+
+    </div>
+  </section>
 
   <!-- Looping video background, behind everything, with a dark
        tint on top so the words stay easy to read -->
@@ -54,7 +107,6 @@
 
   <nav class="navbar">
     <div class="nav-logo">
-      <img src="logo.png?v=2" alt="ABY Go badge" class="nav-logo-img" />
       <img src="wordmark.png" alt="ABY Go" class="nav-wordmark" />
     </div>
     <div class="nav-links">
@@ -212,6 +264,6 @@
     <span id="plane" class="plane" hidden>✈️</span>
   </div>
 
-  <script src="script.js?v=74"></script>
+  <script src="script.js?v=78"></script>
 </body>
 </html>
