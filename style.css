@@ -1077,3 +1077,23 @@ svg.icon-filled { fill: currentColor; }
 .tz-row .tz-time {
   font-family: "Playfair Display", Georgia, serif;
 }
+
+
+/* ---------- Flat icon tiles ---------- */
+/* Every info icon sits on a soft rounded tile of its own colour */
+.ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65em;
+  height: 1.65em;
+  border-radius: 0.5em;
+  margin-right: 0.45em;
+  vertical-align: -0.45em;
+  flex-shrink: 0;
+}
+.ic svg.icon {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: 0;
+}

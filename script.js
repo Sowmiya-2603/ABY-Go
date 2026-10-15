@@ -73,6 +73,8 @@ const noSavedMessage = document.getElementById("no-saved-message");
    icon("name", true) returns it filled in (used for saved hearts).
    ------------------------------------------------------------ */
 const ICONS = {
+  "droplets": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z\" /><path d=\"M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97\" /></svg>",
+  "wind": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M12.8 19.6A2 2 0 1 0 14 16H2\" /><path d=\"M17.5 8a2.5 2.5 0 1 1 2 4H2\" /><path d=\"M9.8 4.4A2 2 0 1 1 11 8H2\" /></svg>",
   "globe": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\" /><path d=\"M2 12h20\" /></svg>",
   "search": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg>",
   "heart": "<svg class=\"icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" ><path d=\"M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5\" /></svg>",
@@ -124,6 +126,8 @@ const ICON_COLORS = {
   "cloud-snow": "#bae6fd",
   "cloud-lightning": "#facc15",
   "thermometer": "#f87171",
+  "droplets": "#60a5fa",
+  "wind": "#7dd3fc",
   "sunrise": "#fbbf24",
   "sunset": "#fb923c",
   "map-pin": "#f87171",
@@ -151,6 +155,11 @@ const ICON_COLORS = {
   "flame": "#fb923c",
   "heart": "#fb7185",
 };
+// A "flat icon": the glyph on a soft rounded tile of its own colour
+function chip(name) {
+  const tint = (ICON_COLORS[name] || "#93a5c1") + "26";
+  return '<span class="ic" style="background:' + tint + '">' + icon(name) + "</span>";
+}
 function icon(name, filled) {
   let svg = ICONS[name] || "";
   const color = ICON_COLORS[name];
@@ -1533,9 +1542,9 @@ async function loadWeather() {
       "<span class='weather-icon'>" + weather.icon + "</span> " +
       "<span class='weather-temp'>" + Math.round(current.temperature_2m) + "°C</span>" +
       "<p>" + weather.text + "</p>" +
-      "<p class='weather-detail'>🌡️ Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
-      "<p class='weather-detail'>💧 Humidity: " + current.relative_humidity_2m + "%</p>" +
-      "<p class='weather-detail'>💨 Wind: " + Math.round(current.wind_speed_10m) + " km/h</p>" +
+      "<p class='weather-detail'>" + chip("thermometer") + "Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
+      "<p class='weather-detail'>" + chip("droplets") + "Humidity: " + current.relative_humidity_2m + "%</p>" +
+      "<p class='weather-detail'>" + chip("wind") + "Wind: " + Math.round(current.wind_speed_10m) + " km/h</p>" +
       forecastHTML;
   } catch (error) {
     if (destination !== currentDestination) return;
@@ -1583,8 +1592,8 @@ async function loadSunTimes() {
 
     sunContent.innerHTML =
       "<div class='sun-times'>" +
-      "<p>" + icon("sunrise") + " Sunrise: <strong>" + sunrise + "</strong></p>" +
-      "<p>" + icon("sunset") + " Sunset: <strong>" + sunset + "</strong></p>" +
+      "<p>" + chip("sunrise") + "Sunrise: <strong>" + sunrise + "</strong></p>" +
+      "<p>" + chip("sunset") + "Sunset: <strong>" + sunset + "</strong></p>" +
       "<p class='muted'>Local time in " + destination.name + "</p>" +
       "</div>";
   } catch (error) {
@@ -2133,7 +2142,7 @@ function renderThingsToDo(ideas, categories) {
     column.className = "explore-category";
 
     const heading = document.createElement("h4");
-    heading.innerHTML = category.icon ? icon(category.icon) + " " : "";
+    heading.innerHTML = category.icon ? chip(category.icon) + " " : "";
     heading.appendChild(document.createTextNode(category.title));
     column.appendChild(heading);
 
@@ -2276,9 +2285,9 @@ async function loadTimeDifference() {
     }
 
     timezoneContent.innerHTML =
-      "<div class='tz-row'><span>" + icon("house") + " " + home.name + "</span>" +
+      "<div class='tz-row'><span>" + chip("house") + "" + home.name + "</span>" +
       "<span class='tz-time'>" + homeTime.time + "</span></div>" +
-      "<div class='tz-row'><span>" + icon("map-pin") + " " + destination.name + "</span>" +
+      "<div class='tz-row'><span>" + chip("map-pin") + "" + destination.name + "</span>" +
       "<span class='tz-time'>" + destTime.time + "</span></div>" +
       "<p class='tz-diff'>" + diffText + "</p>";
   } catch (error) {
@@ -2341,7 +2350,7 @@ function loadDistance() {
   let modesHTML = "<div class='travel-modes'>";
   for (const mode of TRAVEL_MODES) {
     modesHTML +=
-      "<div><span>" + icon(mode.icon) + " " + mode.label + "</span>" +
+      "<div><span>" + chip(mode.icon) + "" + mode.label + "</span>" +
       "<span>" + formatDuration(km / mode.speed) + "</span></div>";
   }
   modesHTML += "</div>";
@@ -2455,11 +2464,11 @@ async function loadEmergencyNumbers() {
     }
 
     emergencyContent.innerHTML =
-      "<div class='emg-row'><span>" + icon("shield") + " Police</span>" +
+      "<div class='emg-row'><span>" + chip("shield") + "Police</span>" +
       "<span class='emg-number'>" + (numbers.police || "112") + "</span></div>" +
-      "<div class='emg-row'><span>" + icon("ambulance") + " Ambulance</span>" +
+      "<div class='emg-row'><span>" + chip("ambulance") + "Ambulance</span>" +
       "<span class='emg-number'>" + (numbers.ambulance || "112") + "</span></div>" +
-      "<div class='emg-row'><span>" + icon("flame") + " Fire</span>" +
+      "<div class='emg-row'><span>" + chip("flame") + "Fire</span>" +
       "<span class='emg-number'>" + (numbers.fire || "112") + "</span></div>" +
       "<p class='muted emg-source'>For " + destination.country +
       " · <a href='" + EMERGENCY_PAGE +
