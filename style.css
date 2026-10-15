@@ -200,7 +200,8 @@ body {
 
 .hero p {
   font-size: 1.35rem;
-  color: #b6c2d9;
+  /* one colour for the whole hero, same as the headline */
+  color: #ffffff;
   margin-bottom: 24px;
   max-width: 38ch;
 }
