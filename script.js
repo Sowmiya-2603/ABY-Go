@@ -161,10 +161,9 @@ const ICON_COLORS = {
   "flame": "#fb923c",
   "heart": "#fb7185",
 };
-// A "flat icon": the glyph on a soft rounded tile of its own colour
+// An info icon with consistent spacing before its label
 function chip(name) {
-  const tint = (ICON_COLORS[name] || "#93a5c1") + "26";
-  return '<span class="ic" style="background:' + tint + '">' + icon(name) + "</span>";
+  return '<span class="ic">' + icon(name) + "</span>";
 }
 function icon(name, filled) {
   let svg = ICONS[name] || "";

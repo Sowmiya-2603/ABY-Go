@@ -1088,17 +1088,13 @@ svg.icon-filled { fill: currentColor; }
 .ic {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 1.65em;
-  height: 1.65em;
-  border-radius: 0.5em;
   margin-right: 0.45em;
-  vertical-align: -0.45em;
+  vertical-align: -0.2em;
   flex-shrink: 0;
 }
 .ic svg.icon {
-  width: 1.05em;
-  height: 1.05em;
+  width: 1.1em;
+  height: 1.1em;
   vertical-align: 0;
 }
 
