@@ -232,18 +232,14 @@ body {
   touch-action: none; /* let us handle touch drags ourselves */
 }
 
-/* Messages and suggestions sit below both columns */
+/* Messages and suggestions sit under the search bar, in view */
 .status-message {
-  grid-column: 1 / -1;
-  justify-self: center;
+  display: inline-block;
 }
 
-/* Full row width, so the title and the buttons share the same
-   centre line */
 .suggestions {
-  grid-column: 1 / -1;
   width: 100%;
-  text-align: center;
+  text-align: left;
 }
 
 /* On smaller screens, stack: words on top, globe below */
@@ -271,6 +267,14 @@ body {
     justify-content: center;
   }
 
+  .suggestions {
+    text-align: center;
+  }
+
+  .suggestion-buttons {
+    justify-content: center;
+  }
+
   #globe {
     width: min(440px, 88vw);
   }
@@ -289,13 +293,14 @@ body {
    width limit, keeping the title centred over the buttons */
 .hero .suggestions-title {
   max-width: none;
-  margin: 0 auto 10px;
+  margin: 0 0 10px;
   font-weight: 500;
+  font-size: 1.05rem;
 }
 
 .suggestion-buttons {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 10px;
 }
