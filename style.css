@@ -1066,8 +1066,10 @@ svg.icon-filled { fill: currentColor; }
 /* The second half of a headline turns gold italic serif,
    like "Spin the globe." / "Know who to call." */
 .accent-word {
-  font-style: italic;
-  color: var(--gold);
+  /* same font and weight as the rest of the headline, just in the
+     app's own blue so it matches the night-sky theme */
+  font-style: normal;
+  color: #5fa8ff;
 }
 
 /* Big numbers are set in the serif, like the film's stat cards */
