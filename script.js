@@ -2240,11 +2240,11 @@ function renderThingsToDo(ideas, categories) {
 }
 
 /* ------------------------------------------------------------
-   7c. TIME ZONES & DISTANCE (timeapi.io + a little math)
+   7c. TIME ZONES & DISTANCE (browser clocks + a little math)
    The user tells us where THEY are ("home"). We remember it in
    localStorage, then:
     - the Time Zones card compares the clocks at home and at the
-      destination using https://timeapi.io (free, no key)
+      destination using the browser's own timezone support
     - the Distance card measures how far away the destination is
       and estimates travel time by plane, train, car and ship
    ------------------------------------------------------------ */
@@ -2317,24 +2317,33 @@ async function loadTimeDifference() {
   timezoneContent.innerHTML = "<p class='muted'>Checking the clocks...</p>";
 
   try {
-    // Ask timeapi.io for the current time at both places.
-    // It works from coordinates — no timezone names needed.
-    function timeUrl(place) {
-      return "https://timeapi.io/api/time/current/coordinate" +
-        "?latitude=" + place.latitude + "&longitude=" + place.longitude;
+    // No clock API needed: once we know each place's TIMEZONE NAME
+    // (e.g. "Europe/Paris"), the browser itself can tell us the
+    // local time there. The geocoder gives us the name.
+    function timezoneFor(place) {
+      if (place.timezone) return place.timezone;
+      // tz.js knows which timezone every point on Earth belongs to,
+      // so this works offline and for any coordinates.
+      place.timezone = tzlookup(place.latitude, place.longitude);
+      return place.timezone;
     }
-    const [homeTime, destTime] = await Promise.all([
-      fetch(timeUrl(home), { signal: AbortSignal.timeout(12000) }).then(r => r.json()),
-      fetch(timeUrl(destination), { signal: AbortSignal.timeout(12000) }).then(r => r.json()),
-    ]);
+    const homeTz = timezoneFor(home);
+    const destTz = timezoneFor(destination);
 
     // The user moved on to another place? Ignore this answer.
     if (destination !== currentDestination) return;
 
-    // Compare the two local clocks, in minutes
-    const diffMinutes = Math.round(
-      (new Date(destTime.dateTime) - new Date(homeTime.dateTime)) / 60000
-    );
+    const now = new Date();
+    function wallClock(tz) {
+      return now.toLocaleTimeString(undefined,
+        { hour: "2-digit", minute: "2-digit", timeZone: tz });
+    }
+    // Parse each zone's wall time back into a date; the difference
+    // between the two is the timezone gap, to the minute.
+    function zoneTime(tz) {
+      return new Date(now.toLocaleString("en-US", { timeZone: tz }));
+    }
+    const diffMinutes = Math.round((zoneTime(destTz) - zoneTime(homeTz)) / 60000);
     const hours = Math.floor(Math.abs(diffMinutes) / 60);
     const minutes = Math.abs(diffMinutes) % 60;
     let diffText;
@@ -2344,15 +2353,14 @@ async function loadTimeDifference() {
       diffText =
         icon("clock") + " " + destination.name + " is " + hours + "h" +
         (minutes ? " " + minutes + "m" : "") +
-        (diffMinutes > 0 ? " ahead of " : " behind ") +
-        (diffMinutes > 0 ? home.name : home.name);
+        (diffMinutes > 0 ? " ahead of " : " behind ") + home.name;
     }
 
     timezoneContent.innerHTML =
       "<div class='tz-row'><span>" + chip("house") + "" + home.name + "</span>" +
-      "<span class='tz-time'>" + homeTime.time + "</span></div>" +
+      "<span class='tz-time'>" + wallClock(homeTz) + "</span></div>" +
       "<div class='tz-row'><span>" + chip("map-pin") + "" + destination.name + "</span>" +
-      "<span class='tz-time'>" + destTime.time + "</span></div>" +
+      "<span class='tz-time'>" + wallClock(destTz) + "</span></div>" +
       "<p class='tz-diff'>" + diffText + "</p>";
   } catch (error) {
     if (destination !== currentDestination) return;
