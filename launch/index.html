@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABY Go · All Before You Go | Now live</title>
+  <meta name="description" content="Weather, daylight, time zones, distance, currency, emergency numbers and things to see. Seven travel answers on one screen. Spin the globe, pick a place, and go." />
+  <meta name="theme-color" content="#03050b" />
+  <link rel="icon" type="image/png" href="assets/icon.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <!-- Link previews (WhatsApp, LinkedIn, X, Slack...) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ABY Go: All Before You Go" />
+  <meta property="og:description" content="Seven travel answers. One screen. Spin the globe, pick a place, and go." />
+  <meta property="og:image" content="assets/og.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Same type as the app and the brand films:
+       Playfair Display for headlines, Nunito for everything else -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700;1,800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="launch.css?v=1" />
+</head>
+<body>
+  <!-- Icons from lucide.dev (ISC licence), the same set the app uses -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-cloud-sun" viewBox="0 0 24 24"><path d="M12 2v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="M20 12h2" /><path d="m19.07 4.93-1.41 1.41" /><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128" /><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z" /></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol>
+  <symbol id="i-sunrise" viewBox="0 0 24 24"><path d="M12 2v8" /><path d="m4.93 10.93 1.41 1.41" /><path d="M2 18h2" /><path d="M20 18h2" /><path d="m19.07 10.93-1.41 1.41" /><path d="M22 22H2" /><path d="m8 6 4-4 4 4" /><path d="M16 18a4 4 0 0 0-8 0" /></symbol>
+  <symbol id="i-sunset" viewBox="0 0 24 24"><path d="M12 10V2" /><path d="m4.93 10.93 1.41 1.41" /><path d="M2 18h2" /><path d="M20 18h2" /><path d="m19.07 10.93-1.41 1.41" /><path d="M22 22H2" /><path d="m16 6-4 4-4-4" /><path d="M16 18a4 4 0 0 0-8 0" /></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" /></symbol>
+  <symbol id="i-train-front" viewBox="0 0 24 24"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1" /><path d="m9 15-1-1" /><path d="m15 15 1-1" /><path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z" /><path d="m8 19-2 3" /><path d="m16 19 2 3" /></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></symbol>
+  <symbol id="i-ship" viewBox="0 0 24 24"><path d="M12 2v2" /><path d="M12 9.189V13" /><path d="M19 12V6a2 2 0 00-2-2H7a2 2 0 00-2 2v6" /><path d="M19.38 19A11.6 11.6 0 0021 13l-8.188-3.639a2 2 0 00-1.624 0L3 13.001a11.6 11.6 0 002.81 7.76" /><path d="M2 20c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol>
+  <symbol id="i-ambulance" viewBox="0 0 24 24"><path d="M10 10H6" /><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" /><path d="M19 18h2a1 1 0 0 0 1-1v-3.28a1 1 0 0 0-.684-.948l-1.923-.641a1 1 0 0 1-.578-.502l-1.539-3.076A1 1 0 0 0 16.382 8H14" /><path d="M8 8v4" /><path d="M9 18h6" /><circle cx="17" cy="18" r="2" /><circle cx="7" cy="18" r="2" /></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" /></symbol>
+  <symbol id="i-landmark" viewBox="0 0 24 24"><path d="M10 18v-7" /><path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z" /><path d="M14 18v-7" /><path d="M18 18v-7" /><path d="M3 22h18" /><path d="M6 18v-7" /></symbol>
+  <symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /><circle cx="12" cy="10" r="3" /></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" /></symbol>
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M10 2v2" /><path d="M14 2v2" /><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1" /><path d="M6 2v2" /></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20" /><path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13" /></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
+  <symbol id="i-droplets" viewBox="0 0 24 24"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z" /><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97" /></symbol>
+  <symbol id="i-wind" viewBox="0 0 24 24"><path d="M12.8 19.6A2 2 0 1 0 14 16H2" /><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2" /><path d="M9.8 4.4A2 2 0 1 1 11 8H2" /></symbol>
+  <symbol id="i-cloud-rain" viewBox="0 0 24 24"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M16 14v6" /><path d="M8 14v6" /><path d="M12 16v6" /></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+  <symbol id="i-thermometer" viewBox="0 0 24 24"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" /></symbol>
+  <symbol id="i-umbrella" viewBox="0 0 24 24"><path d="M12 13v7a2 2 0 0 0 4 0" /><path d="M12 2v2" /><path d="M20.992 13a1 1 0 0 0 .97-1.274 10.284 10.284 0 0 0-19.923 0A1 1 0 0 0 3 13z" /></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /><path d="M15 5.764v15" /><path d="M9 3.236v15" /></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-arrow-left-right" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></symbol>
+  <symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol>
+  <symbol id="i-banknote" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+  <symbol id="i-siren" viewBox="0 0 24 24"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/><path d="M21 12h1"/><path d="M18.5 4.5 18 5"/><path d="M2 12h1"/><path d="M12 2v1"/><path d="m4.929 4.929.707.707"/><path d="M12 12v6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+  <symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-book-open" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M4 18h16"/><path d="M4 6h16"/></symbol>
+  <symbol id="i-mouse-pointer-click" viewBox="0 0 24 24"><path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/></symbol>
+</svg>
+
+  <!-- Twinkling stars behind the whole page (see launch.js) -->
+  <canvas id="stars" class="stars" aria-hidden="true"></canvas>
+
+  <!-- ============ NAV ============ -->
+  <nav class="nav" id="nav">
+    <a href="#top" class="nav-brand" aria-label="ABY Go home">
+      <img src="assets/wordmark.png" alt="ABY Go" width="680" height="183" />
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#films">Films</a>
+      <a href="#try">Try it</a>
+    </div>
+    <a class="btn btn-primary btn-sm" href="https://aby-go.vercel.app/" target="_blank" rel="noopener">
+      Open ABY Go <svg class="i"><use href="#i-arrow-right"/></svg>
+    </a>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <header class="hero" id="top">
+    <div class="hero-inner">
+      <p class="pill reveal"><span class="pulse"></span> Now live · Free in your browser</p>
+      <h1 class="hero-title reveal">
+        Every journey begins
+        <em>before you go.</em>
+      </h1>
+      <p class="hero-sub reveal">
+        Weather, daylight, time zones, distance, currency, emergency numbers
+        and things to see. Seven answers, one screen.
+        Spin the globe, pick a place, and go.
+      </p>
+      <div class="hero-cta reveal">
+        <a class="btn btn-primary btn-lg" href="https://aby-go.vercel.app/" target="_blank" rel="noopener">
+          Start planning, it's free <svg class="i"><use href="#i-arrow-right"/></svg>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="#films" data-play="launch">
+          <svg class="i"><use href="#i-play"/></svg> Watch the launch film
+        </a>
+      </div>
+      <ul class="hero-proof reveal">
+        <li><svg class="i"><use href="#i-check"/></svg> No sign-up</li>
+        <li><svg class="i"><use href="#i-check"/></svg> No download</li>
+        <li><svg class="i"><use href="#i-check"/></svg> Works on phone &amp; laptop</li>
+      </ul>
+    </div>
+
+    <!-- The planet rising at the bottom, with two cards floating near it -->
+    <div class="planet-wrap" aria-hidden="true">
+      <div class="planet"></div>
+      <svg class="route" viewBox="0 0 1000 300" preserveAspectRatio="none">
+        <path id="route-path" d="M710 250 Q 560 40 330 170" />
+      </svg>
+      <span class="city city-a"><i></i></span>
+      <span class="city city-b"><i></i></span>
+    </div>
+
+    <div class="float-card fc-left" aria-hidden="true">
+      <span class="fc-label"><svg class="i" style="color:#f5c95c"><use href="#i-cloud-sun"/></svg> Weather · Paris</span>
+      <strong class="fc-big"><span data-live="temp">17</span>°</strong>
+      <span class="fc-note" data-live="cond">Partly cloudy</span>
+    </div>
+    <div class="float-card fc-right" aria-hidden="true">
+      <span class="fc-label"><svg class="i" style="color:#93c5fd"><use href="#i-plane"/></svg> Chennai → Paris</span>
+      <strong class="fc-big">8,036 <small>km</small></strong>
+      <span class="fc-note">About 10 h by air</span>
+    </div>
+
+    <a href="#problem" class="scroll-cue" aria-label="Scroll down"><span></span></a>
+  </header>
+
+  <main>
+
+    <!-- ============ PROBLEM ============ -->
+    <section class="problem" id="problem">
+      <div class="wrap center">
+        <p class="eyebrow reveal">The problem</p>
+        <h2 class="h2 reveal">Planning a trip means juggling <em>seven different tabs.</em></h2>
+      </div>
+
+      <!-- The tabs drift in, then get pulled into one ABY Go screen -->
+      <div class="tab-stage" id="tab-stage">
+        <span class="tab-chip" style="--x:-34;--y:-30;--r:-4deg"><svg class="i" style="color:#f5c95c"><use href="#i-cloud-sun"/></svg> Weather app <svg class="i x"><use href="#i-x"/></svg></span>
+        <span class="tab-chip" style="--x:2;--y:-40;--r:3deg"><svg class="i" style="color:#fbbf24"><use href="#i-sunrise"/></svg> Sunrise times <svg class="i x"><use href="#i-x"/></svg></span>
+        <span class="tab-chip" style="--x:34;--y:-26;--r:-2deg"><svg class="i" style="color:#93c5fd"><use href="#i-clock"/></svg> World clock <svg class="i x"><use href="#i-x"/></svg></span>
+        <span class="tab-chip" style="--x:-30;--y:6;--r:2deg"><svg class="i" style="color:#4ade80"><use href="#i-banknote"/></svg> Currency converter <svg class="i x"><use href="#i-x"/></svg></span>
+        <span class="tab-chip" style="--x:28;--y:10;--r:-3deg"><svg class="i" style="color:#7dd3fc"><use href="#i-map"/></svg> Route planner <svg class="i x"><use href="#i-x"/></svg></span>
+        <span class="tab-chip" style="--x:-12;--y:40;--r:-2deg"><svg class="i" style="color:#d9c08c"><use href="#i-book-open"/></svg> Travel blogs <svg class="i x"><use href="#i-x"/></svg></span>
+        <span class="tab-chip" style="--x:22;--y:42;--r:4deg"><svg class="i" style="color:#fb7185"><use href="#i-siren"/></svg> Emergency numbers <svg class="i x"><use href="#i-x"/></svg></span>
+
+        <div class="one-screen">
+          <img src="assets/icon.png" alt="" width="72" height="72" />
+          <div>
+            <strong>One tab. That's it.</strong>
+            <span>Everything above, on a single screen.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seven answers. One screen. -->
+      <div class="wrap center">
+        <h2 class="h2 reveal" id="features">Seven answers. <em>One screen.</em></h2>
+        <p class="lead reveal">Pick a place and ABY Go fills in the rest, from live open data.</p>
+      </div>
+      <div class="wrap">
+        <ul class="answer-grid">
+          <li class="reveal"><a href="#sky"><svg class="i" style="color:#f5c95c"><use href="#i-cloud-sun"/></svg><span>Weather</span></a></li>
+          <li class="reveal"><a href="#sky"><svg class="i" style="color:#fbbf24"><use href="#i-sunrise"/></svg><span>Sunrise &amp; Sunset</span></a></li>
+          <li class="reveal"><a href="#time"><svg class="i" style="color:#93c5fd"><use href="#i-clock"/></svg><span>Time Zone</span></a></li>
+          <li class="reveal"><a href="#time"><svg class="i" style="color:#7dd3fc"><use href="#i-compass"/></svg><span>Travel Duration</span></a></li>
+          <li class="reveal"><a href="#basics"><svg class="i" style="color:#4ade80"><use href="#i-arrow-left-right"/></svg><span>Currency</span></a></li>
+          <li class="reveal"><a href="#basics"><svg class="i" style="color:#fb7185"><use href="#i-siren"/></svg><span>Emergency Contacts</span></a></li>
+          <li class="reveal"><a href="#place"><svg class="i" style="color:#d9c08c"><use href="#i-landmark"/></svg><span>Places to Explore</span></a></li>
+          <li class="reveal"><a href="#save"><svg class="i" style="color:#f472b6"><use href="#i-heart"/></svg><span>My Trips</span></a></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ CHAPTER: SKY ============ -->
+    <section class="chapter" id="sky" style="--c1:#5fb4ff;--c2:#2563eb">
+      <div class="wrap chapter-grid">
+        <div class="chapter-copy">
+          <p class="know reveal">Know the</p>
+          <h2 class="word reveal">SKY</h2>
+          <p class="tags reveal">Weather <i>/</i> Sunrise &amp; Sunset</p>
+          <p class="chapter-text reveal">
+            Pack for the sky you'll get. Live conditions, what it feels like,
+            a 3-day forecast, sunrise and sunset in local time, and a short
+            note on what to bring.
+          </p>
+          <span class="bars reveal"><b></b><b></b><b></b><b></b></span>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#f5c95c"><use href="#i-cloud-sun"/></svg> Weather</span>
+              <span class="muted">Paris · <span data-live="day">Today</span></span>
+            </header>
+            <div class="weather-main">
+              <svg class="i weather-ic" data-live="icon"><use href="#i-cloud-sun"/></svg>
+              <strong class="temp"><span data-live="temp">17</span>°</strong>
+              <div>
+                <p class="cond" data-live="cond">Partly cloudy</p>
+                <p class="muted">Feels like <span data-live="feels">16</span>°</p>
+              </div>
+            </div>
+            <div class="chips">
+              <span><svg class="i" style="color:#60a5fa"><use href="#i-droplets"/></svg> Humidity <b data-live="hum">72</b>%</span>
+              <span><svg class="i" style="color:#7dd3fc"><use href="#i-wind"/></svg> Wind <b data-live="wind">9</b> km/h</span>
+            </div>
+            <div class="forecast" data-live="forecast">
+              <span>Fri <b>18° / 11°</b></span>
+              <span>Sat <b>16° / 10°</b></span>
+              <span>Sun <b>19° / 12°</b></span>
+            </div>
+            <p class="live-note" data-live="note">Sample values. Live from Open-Meteo when available.</p>
+          </article>
+
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#fbbf24"><use href="#i-sunrise"/></svg> Sunrise &amp; Sunset</span>
+              <span class="muted">Local time in Paris</span>
+            </header>
+            <div class="sun-arc">
+              <svg viewBox="0 0 300 120" aria-hidden="true">
+                <path class="arc-bg" d="M20 110 Q150 -30 280 110" />
+                <path class="arc-fg" id="arc-fg" d="M20 110 Q150 -30 280 110" />
+                <circle id="sun-dot" r="8" cx="150" cy="40" />
+              </svg>
+            </div>
+            <div class="sun-times">
+              <div><span class="muted">Sunrise</span><strong data-live="sunrise">08:12</strong></div>
+              <div class="center"><span class="muted">Daylight</span><strong class="small" data-live="daylength">10 h 47 m</strong></div>
+              <div class="right"><span class="muted">Sunset</span><strong data-live="sunset">18:59</strong></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHAPTER: TIME ============ -->
+    <section class="chapter flip" id="time" style="--c1:#5ef2c8;--c2:#14b8a6">
+      <div class="wrap chapter-grid">
+        <div class="chapter-copy">
+          <p class="know reveal">Know the</p>
+          <h2 class="word reveal">TIME</h2>
+          <p class="tags reveal">Time Zones <i>/</i> Distance &amp; Travel Time</p>
+          <p class="chapter-text reveal">
+            How far, and how long. See both clocks side by side, how far
+            apart they are, and the distance as the crow flies with rough
+            times by flight, train, car and ship.
+          </p>
+          <span class="bars reveal"><b></b><b></b><b></b><b></b></span>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#93c5fd"><use href="#i-clock"/></svg> Time Zones</span>
+              <span class="muted">Live</span>
+            </header>
+            <div class="clocks">
+              <div class="clock-item">
+                <div class="dial" id="dial-a"><i class="h"></i><i class="m"></i><i class="s"></i></div>
+                <div><span class="muted">Chennai</span><strong id="time-a">--:--</strong><span class="muted tz">IST</span></div>
+              </div>
+              <div class="clock-item">
+                <div class="dial" id="dial-b"><i class="h"></i><i class="m"></i><i class="s"></i></div>
+                <div><span class="muted">Paris</span><strong id="time-b">--:--</strong><span class="muted tz" id="tz-b">CEST</span></div>
+              </div>
+            </div>
+            <p class="diff" id="time-diff">Paris is 3 h 30 m behind Chennai</p>
+          </article>
+
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#7dd3fc"><use href="#i-compass"/></svg> Distance &amp; Travel Time</span>
+            </header>
+            <strong class="distance"><span class="count" data-to="8036">8,036</span> <small>km</small></strong>
+            <p class="muted">from Chennai, as the crow flies</p>
+            <div class="modes">
+              <span><svg class="i"><use href="#i-plane"/></svg> Flight <b>10 h 3 m</b></span>
+              <span><svg class="i"><use href="#i-train-front"/></svg> Train <b>3 d 17 h</b></span>
+              <span><svg class="i"><use href="#i-car"/></svg> Car <b>5 d 3 h</b></span>
+              <span><svg class="i"><use href="#i-ship"/></svg> Ship <b>8 d 8 h</b></span>
+            </div>
+            <p class="live-note">Rough estimates from average speeds, not real routes.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHAPTER: BASICS ============ -->
+    <section class="chapter" id="basics" style="--c1:#ffc04d;--c2:#ff7a1a">
+      <div class="wrap chapter-grid">
+        <div class="chapter-copy">
+          <p class="know reveal">Know the</p>
+          <h2 class="word reveal">BASICS</h2>
+          <p class="tags reveal">Currency Converter <i>/</i> Emergency Contacts</p>
+          <p class="chapter-text reveal">
+            What your money is worth there, and who to call if something
+            goes wrong. Police, ambulance and fire, for the country you
+            picked, one tap away.
+          </p>
+          <span class="bars reveal"><b></b><b></b><b></b><b></b></span>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#4ade80"><use href="#i-arrow-left-right"/></svg> Currency Converter</span>
+              <span class="muted">Try it</span>
+            </header>
+            <form class="fx" id="fx" onsubmit="return false">
+              <label>
+                <span class="muted">INR</span>
+                <span class="fx-input">₹ <input id="fx-in" type="number" inputmode="decimal" min="0" step="any" value="10000" aria-label="Amount in Indian rupees" /></span>
+              </label>
+              <svg class="i fx-swap"><use href="#i-arrow-left-right"/></svg>
+              <div>
+                <span class="muted">EUR</span>
+                <strong class="fx-out" id="fx-out">€ 93.90</strong>
+              </div>
+            </form>
+            <p class="live-note" id="fx-note">Live exchange rate from Frankfurter.</p>
+          </article>
+
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#fb7185"><use href="#i-siren"/></svg> Emergency Contacts</span>
+              <span class="muted">France</span>
+            </header>
+            <div class="sos">
+              <div class="sos-main"><strong>112</strong><span>All emergencies</span></div>
+              <ul>
+                <li><svg class="i" style="color:#93c5fd"><use href="#i-shield"/></svg> Police <b>17</b></li>
+                <li><svg class="i" style="color:#fb7185"><use href="#i-ambulance"/></svg> Ambulance <b>15</b></li>
+                <li><svg class="i" style="color:#fb923c"><use href="#i-flame"/></svg> Fire <b>18</b></li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHAPTER: PLACE ============ -->
+    <section class="chapter flip" id="place" style="--c1:#ff7a8a;--c2:#e11d48">
+      <div class="wrap chapter-grid">
+        <div class="chapter-copy">
+          <p class="know reveal">Know the</p>
+          <h2 class="word reveal">PLACE</h2>
+          <p class="tags reveal">About the Destination <i>/</i> Things to Explore</p>
+          <p class="chapter-text reveal">
+            A quick read on where you're headed, then the spots worth your
+            time: landmarks, museums, cafés and green escapes nearby.
+          </p>
+          <span class="bars reveal"><b></b><b></b><b></b><b></b></span>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#d9c08c"><use href="#i-book-open"/></svg> About the Destination</span>
+              <span class="muted">Wikipedia</span>
+            </header>
+            <h3 class="place-name">Paris <small>France</small></h3>
+            <p class="place-text">
+              The French capital on the Seine, known for its art, its cafés,
+              its grand boulevards and the iron tower that became its symbol.
+            </p>
+          </article>
+
+          <article class="card reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#e8cf9e"><use href="#i-sparkles"/></svg> Things to Explore</span>
+              <span class="muted">OpenStreetMap</span>
+            </header>
+            <div class="filter" role="tablist" aria-label="Kinds of places">
+              <button class="on" type="button" data-kind="sights">Tourist spots</button>
+              <button type="button" data-kind="museums">Museums</button>
+              <button type="button" data-kind="cafes">Cafés</button>
+              <button type="button" data-kind="nature">Nature</button>
+            </div>
+            <ul class="spots" id="spots"></ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHAPTER: SAVE ============ -->
+    <section class="chapter" id="save" style="--c1:#7fd6ff;--c2:#34e0b4">
+      <div class="wrap chapter-grid">
+        <div class="chapter-copy">
+          <p class="know reveal">Love it?</p>
+          <h2 class="word reveal">Save it.</h2>
+          <p class="tags reveal">My Trips</p>
+          <p class="chapter-text reveal">
+            Every trip, one place. Keep your favourite destinations with one
+            tap and come back to them whenever you're ready to plan.
+          </p>
+          <span class="bars reveal"><b></b><b></b><b></b><b></b></span>
+        </div>
+
+        <div class="cards">
+          <article class="card trips reveal">
+            <header class="card-head">
+              <span><svg class="i" style="color:#fb7185"><use href="#i-heart"/></svg> My Trips</span>
+              <span class="muted">Tap a heart</span>
+            </header>
+            <ul id="trips">
+              <li><button type="button" class="saved fresh" aria-pressed="true"><svg class="i"><use href="#i-heart"/></svg></button><b>Paris</b><span>France</span><em>Just saved</em></li>
+              <li><button type="button" class="saved" aria-pressed="true"><svg class="i"><use href="#i-heart"/></svg></button><b>Kyoto</b><span>Japan</span><em>Saved</em></li>
+              <li><button type="button" class="saved" aria-pressed="true"><svg class="i"><use href="#i-heart"/></svg></button><b>Bali</b><span>Indonesia</span><em>Saved</em></li>
+              <li><button type="button" aria-pressed="false"><svg class="i"><use href="#i-heart"/></svg></button><b>Cape Town</b><span>South Africa</span><em></em></li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="how" id="how">
+      <div class="wrap center">
+        <p class="eyebrow reveal">How it works</p>
+        <h2 class="h2 spg reveal"><span>Spin.</span> <span>Pick.</span> <span>Go.</span></h2>
+      </div>
+      <div class="wrap steps">
+        <article class="step reveal">
+          <span class="num">01</span>
+          <svg class="i" style="color:#f8fafc"><use href="#i-globe"/></svg>
+          <h3>Spin the globe</h3>
+          <p>Set your starting point. Click your home on the globe, or type it in.</p>
+        </article>
+        <article class="step reveal">
+          <span class="num">02</span>
+          <svg class="i" style="color:#60a5fa"><use href="#i-map-pin"/></svg>
+          <h3>Pick your destination</h3>
+          <p>Click where you want to go, then choose the exact town or city from the nearby places.</p>
+        </article>
+        <article class="step reveal">
+          <span class="num">03</span>
+          <svg class="i" style="color:#34e0b4"><use href="#i-plane"/></svg>
+          <h3>Know it all, and go</h3>
+          <p>Weather, time, money, safety and sights appear on one screen. Save it to My Trips.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ FILMS ============ -->
+    <section class="films" id="films">
+      <div class="wrap center">
+        <p class="eyebrow reveal">The films</p>
+        <h2 class="h2 reveal">See it <em>in motion.</em></h2>
+      </div>
+      <div class="wrap">
+        <div class="player reveal">
+          <video id="film" controls playsinline preload="metadata"
+                 poster="assets/poster-launch.jpg" src="assets/launch-film.mp4"></video>
+        </div>
+        <div class="film-tabs" role="tablist" aria-label="Choose a film">
+          <button type="button" class="film-tab on" role="tab" aria-selected="true" data-film="launch">
+            <img src="assets/poster-launch.jpg" alt="" loading="lazy" />
+            <span><b>Launch Film</b><small>0:30 · Spin. Pick. Go.</small></span>
+          </button>
+          <button type="button" class="film-tab" role="tab" aria-selected="false" data-film="motion">
+            <img src="assets/poster-motion.jpg" alt="" loading="lazy" />
+            <span><b>Before You Go</b><small>0:30 · Brand motion</small></span>
+          </button>
+          <button type="button" class="film-tab" role="tab" aria-selected="false" data-film="demo">
+            <img src="assets/poster-demo.jpg" alt="" loading="lazy" />
+            <span><b>Product Demo</b><small>1:02 · Full walkthrough</small></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TRY IT LIVE ============ -->
+    <section class="try" id="try">
+      <div class="wrap center">
+        <p class="eyebrow reveal">Try it live</p>
+        <h2 class="h2 reveal">Take it for a spin, <em>right here.</em></h2>
+        <p class="lead reveal">The real app, running inside this page. Or open it full screen.</p>
+      </div>
+      <div class="wrap">
+        <div class="laptop reveal">
+          <div class="laptop-bar">
+            <i></i><i></i><i></i>
+            <span class="url"><svg class="i"><use href="#i-lock"/></svg> aby-go.vercel.app</span>
+            <a href="https://aby-go.vercel.app/" target="_blank" rel="noopener" aria-label="Open ABY Go in a new tab"><svg class="i"><use href="#i-external-link"/></svg></a>
+          </div>
+          <div class="laptop-screen" id="laptop-screen">
+            <button type="button" class="load-app" id="load-app">
+              <img src="assets/icon.png" alt="" width="84" height="84" />
+              <span class="btn btn-primary btn-lg"><svg class="i"><use href="#i-mouse-pointer-click"/></svg> Launch the live app</span>
+              <small>Loads aby-go.vercel.app in this window</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OPEN DATA ============ -->
+    <section class="open" id="open">
+      <div class="wrap center">
+        <p class="eyebrow reveal">Built on open data</p>
+        <h2 class="h2 reveal">Free. Private. <em>No strings.</em></h2>
+      </div>
+      <div class="wrap pillars">
+        <div class="pillar reveal">
+          <svg class="i" style="color:#34e0b4"><use href="#i-key-round"/></svg>
+          <h3>No account</h3>
+          <p>Open the link and start. No sign-up, no email, no password.</p>
+        </div>
+        <div class="pillar reveal">
+          <svg class="i" style="color:#60a5fa"><use href="#i-lock"/></svg>
+          <h3>Your trips stay with you</h3>
+          <p>Saved destinations live in your own browser, not on a server.</p>
+        </div>
+        <div class="pillar reveal">
+          <svg class="i" style="color:#ffc04d"><use href="#i-smartphone"/></svg>
+          <h3>Any screen</h3>
+          <p>Works on phones, tablets and laptops. Nothing to install.</p>
+        </div>
+      </div>
+      <div class="wrap center">
+        <p class="muted small-cap reveal">Powered by</p>
+        <ul class="sources reveal">
+          <li>Open-Meteo</li><li>Sunrise-Sunset.org</li><li>Frankfurter</li>
+          <li>Wikipedia</li><li>OpenStreetMap</li><li>BigDataCloud</li><li>NASA Blue Marble</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ FINAL CTA ============ -->
+    <section class="final">
+      <div class="wrap final-grid">
+        <div>
+          <img class="final-mark reveal" src="assets/wordmark.png" alt="ABY Go" width="680" height="183" />
+          <p class="tagline reveal">All Before You Go</p>
+          <h2 class="h2 left reveal">Plan your next trip <em>today.</em></h2>
+          <div class="hero-cta reveal">
+            <a class="btn btn-primary btn-lg" href="https://aby-go.vercel.app/" target="_blank" rel="noopener">
+              Open ABY Go <svg class="i"><use href="#i-arrow-right"/></svg>
+            </a>
+            <button type="button" class="btn btn-ghost btn-lg" id="share">
+              <svg class="i"><use href="#i-share-2"/></svg> <span>Share with a friend</span>
+            </button>
+          </div>
+          <button type="button" class="link-pill reveal" id="copy-link">
+            aby-go.vercel.app <svg class="i"><use href="#i-copy"/></svg> <span>Copy</span>
+          </button>
+        </div>
+        <div class="qr-card reveal">
+          <div id="qr" class="qr" aria-label="QR code for aby-go.vercel.app"></div>
+          <p>Scan to open on your phone</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-row">
+      <img src="assets/icon.png" alt="" width="36" height="36" />
+      <p>© <span id="year">2026</span> ABY Go · All Before You Go</p>
+      <nav>
+        <a href="https://aby-go.vercel.app/" target="_blank" rel="noopener">App</a>
+        <a href="#films">Films</a>
+        <a href="https://github.com/Sowmiya-2603/ABY-Go" target="_blank" rel="noopener"><svg class="i"><use href="#i-github"/></svg> GitHub</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- QR code drawing (small library, loaded from cdnjs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+  <script src="launch.js?v=1" defer></script>
+</body>
+</html>
