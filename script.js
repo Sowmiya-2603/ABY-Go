@@ -22,30 +22,24 @@ const globeCtx = globeCanvas.getContext("2d");
 
 const statusMessage = document.getElementById("status-message");
 const navBackButton = document.getElementById("nav-back");
+const heroTitle = document.getElementById("hero-title");
+const heroSubtitle = document.getElementById("hero-subtitle");
+const heroHint = document.getElementById("hero-hint");
+const planeOverlay = document.getElementById("plane-overlay");
+const planeElement = document.getElementById("plane");
 
-// View 1: the planner
-const viewPlan = document.getElementById("view-plan");
-const viewTrip = document.getElementById("view-trip");
-const viewSaved = document.getElementById("view-saved");
-const plannerForm = document.getElementById("planner-form");
-const homeInput = document.getElementById("home-input");     // "From"
-const searchInput = document.getElementById("search-input"); // "To"
-const fromSuggest = document.getElementById("from-suggest");
-const toSuggest = document.getElementById("to-suggest");
-const dateStart = document.getElementById("date-start");
-const dateEnd = document.getElementById("date-end");
-const planGlobeSlot = document.getElementById("plan-globe-slot");
-const tripGlobeSlot = document.getElementById("trip-globe-slot");
-const routePlane = document.getElementById("route-plane");
+const searchForm = document.getElementById("search-form");
+const searchInput = document.getElementById("search-input");
+const suggestionsBox = document.getElementById("suggestions");
+const suggestionsTitle = document.getElementById("suggestions-title");
+const suggestionButtons = document.getElementById("suggestion-buttons");
 
-// View 2: the trip
+const destinationHeader = document.getElementById("destination-header");
 const destinationCity = document.getElementById("destination-city");
 const destinationCountry = document.getElementById("destination-country");
-const tripRoute = document.getElementById("trip-route");
 const saveButton = document.getElementById("save-button");
-const quickFacts = document.getElementById("quick-facts");
-const checklistEl = document.getElementById("checklist");
 
+const cardsSection = document.getElementById("cards");
 const weatherContent = document.getElementById("weather-content");
 const sunContent = document.getElementById("sun-content");
 const wikiContent = document.getElementById("wiki-content");
@@ -59,6 +53,8 @@ const convertResult = document.getElementById("convert-result");
 const emergencyContent = document.getElementById("emergency-content");
 const timezoneContent = document.getElementById("timezone-content");
 const distanceContent = document.getElementById("distance-content");
+const homeInput = document.getElementById("home-input");
+const homeButton = document.getElementById("home-button");
 
 const exploreSection = document.getElementById("explore-section");
 const exploreCity = document.getElementById("explore-city");
@@ -67,12 +63,6 @@ const exploreNote = document.getElementById("explore-note");
 
 const savedList = document.getElementById("saved-list");
 const noSavedMessage = document.getElementById("no-saved-message");
-
-// Does this person prefer less motion? Then we skip the slow
-// spins and flights and jump straight to the result.
-const REDUCED_MOTION =
-  window.matchMedia &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // The app has two steps: first the user picks WHERE THEY ARE
 // (their home), then WHERE THEY WANT TO GO. If a home is already
@@ -183,101 +173,45 @@ function icon(name, filled) {
   return svg;
 }
 
-/* ------------------------------------------------------------
-   VIEWS & ROUTING
-   Three screens live in this one page: the planner (#/plan), a
-   trip (#/trip/...) and the saved list (#/saved). The address bar
-   is the single source of truth, so Back/Forward and refresh all
-   keep their state - and every trip has a shareable URL.
-   ------------------------------------------------------------ */
-let currentDestination = null; // the trip on screen right now
-let plannerFrom = null;        // the resolved "From" place
-let plannerTo = null;          // the resolved "To" place
-let activeField = "to";        // which field a globe click fills
-let routeHome = null;          // {lat, lon} markers for the globe
-let routeDest = null;
+let pickingHome = true;
 
-function showView(name) {
-  viewPlan.hidden = name !== "plan";
-  viewTrip.hidden = name !== "trip";
-  viewSaved.hidden = name !== "saved";
-  document.getElementById("nav-plan").classList.toggle("active", name === "plan");
-  document.getElementById("nav-saved").classList.toggle("active", name === "saved");
-
-  // The globe lives large on the planner and shrinks into the trip
-  // header once a trip is open - the same canvas simply moves.
-  if (name === "trip") {
-    tripGlobeSlot.appendChild(globeCanvas);
-    stopAutoSpin();
-    drawGlobe();
-  } else if (name === "plan") {
-    planGlobeSlot.appendChild(globeCanvas);
-    drawGlobe();
-    if (!REDUCED_MOTION && !spinTimer) startAutoSpin();
+/* Swap the hero text to match the current step */
+function applyStageText() {
+  // The Back button only makes sense on the second step.
+  // (The "if" guard keeps an old cached page from crashing here.)
+  if (navBackButton) navBackButton.hidden = pickingHome;
+  if (pickingHome) {
+    heroTitle.textContent = "Where are you now?";
+    heroSubtitle.textContent = "First, set your starting point.";
+    heroHint.innerHTML =
+      icon("globe") + " Spin the globe and click your home, or type it below.";
+    searchInput.placeholder = "type your city, e.g. Chennai";
+  } else {
+    heroTitle.textContent = "Where do you plan to explore?";
+    heroSubtitle.textContent =
+      "Weather, destination info, daylight and currency, all in one place.";
+    heroHint.innerHTML =
+      icon("globe") + " Spin the globe, then click where you want to go.";
+    searchInput.placeholder = "or type a place, e.g. Paris";
   }
 }
 
-function tripHash(dest) {
-  return "#/trip/" + encodeURIComponent(dest.name) +
-    "?lat=" + dest.latitude.toFixed(4) +
-    "&lon=" + dest.longitude.toFixed(4) +
-    "&country=" + encodeURIComponent(dest.country || "") +
-    "&cc=" + encodeURIComponent(dest.countryCode || "") +
-    "&kind=" + (dest.kind || "place");
-}
+// The destination the user is currently looking at
+let currentDestination = null;
 
-function parseTripHash(hash) {
-  try {
-    const m = hash.match(/^#\/trip\/([^?]+)(?:\?(.*))?$/);
-    if (!m) return null;
-    const params = new URLSearchParams(m[2] || "");
-    const lat = parseFloat(params.get("lat"));
-    const lon = parseFloat(params.get("lon"));
-    if (isNaN(lat) || isNaN(lon)) return null;
-    return {
-      name: decodeURIComponent(m[1]),
-      country: params.get("country") || "",
-      countryCode: params.get("cc") || "",
-      latitude: lat,
-      longitude: lon,
-      timezone: "",
-      kind: params.get("kind") || "place",
-    };
-  } catch (e) { return null; }
-}
-
-let suppressRouteRender = false; // true while WE change the hash
-function renderRoute() {
-  if (suppressRouteRender) { suppressRouteRender = false; return; }
-  const hash = location.hash || "#/plan";
-  if (hash.indexOf("#/trip/") === 0) {
-    const dest = parseTripHash(hash);
-    if (dest) { openTrip(dest, { animate: false }); return; }
-  }
-  if (hash === "#/saved") { showView("saved"); renderSavedList(); return; }
-  showView("plan");
-}
-window.addEventListener("hashchange", renderRoute);
-
-// The Back button in the trip header goes to the planner
-navBackButton.addEventListener("click", function () {
-  location.hash = "#/plan";
-});
-
-/* ---- The trip screen's tabs ---- */
-const tripTabs = document.querySelectorAll(".trip-tab");
-function setActiveTab(name) {
-  tripTabs.forEach(function (tab) {
-    const on = tab.dataset.tab === name;
-    tab.classList.toggle("active", on);
-    tab.setAttribute("aria-selected", on ? "true" : "false");
-  });
-  ["overview", "weather", "essentials", "explore", "about"].forEach(function (n) {
-    document.getElementById("tab-" + n).hidden = n !== name;
-  });
-}
-tripTabs.forEach(function (tab) {
-  tab.addEventListener("click", function () { setActiveTab(tab.dataset.tab); });
+/* The Back button: return to the "Where are you now?" step and
+   clear the destination view. */
+if (navBackButton) navBackButton.addEventListener("click", function () {
+  pickingHome = true;
+  currentDestination = null; // any in-flight answers get ignored
+  destinationHeader.hidden = true;
+  cardsSection.hidden = true;
+  exploreSection.hidden = true;
+  hideStatus();
+  suggestionsBox.hidden = true;
+  searchInput.value = "";
+  applyStageText();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 // The point (latitude/longitude) the user last clicked on the globe
@@ -631,13 +565,8 @@ function drawGlobe() {
   ctx.fillStyle = glint;
   ctx.fill();
 
-  // ---- The trip route: home + destination markers and an arc ----
-  if (routeHome && routeDest) drawRouteArc(ctx, routeHome, routeDest);
-  if (routeHome) drawMarker(ctx, routeHome.lat, routeHome.lon, "#4da3ff");
-  if (routeDest) drawMarker(ctx, routeDest.lat, routeDest.lon, "#ff5f57");
-
-  // A red pin where the user clicked (while still choosing)
-  if (clickedPoint && !routeDest) {
+  // A red pin where the user clicked
+  if (clickedPoint) {
     const p = projectPoint(clickedPoint.lat, clickedPoint.lon);
     if (p.front) {
       ctx.beginPath();
@@ -678,7 +607,6 @@ function drawGridLine(ctx, getPoint, steps) {
 /* ---- Spinning: the globe slowly rotates on its own until the
         user touches it. This uses a JavaScript timer. ---- */
 function startAutoSpin() {
-  if (REDUCED_MOTION) return;
   spinTimer = setInterval(function () {
     rotationLon += 0.2; // a small nudge every 40 ms
     drawGlobe();
@@ -779,7 +707,7 @@ const COUNTRY_TO_CAPITAL = {
 };
 
 async function findNearbyPlaces(lat, lon) {
-  clearSuggest(activeField);
+  suggestionsBox.hidden = true;
   showStatus("Looking up places near that spot...", "search");
 
   try {
@@ -863,12 +791,21 @@ async function findNearbyPlaces(lat, lon) {
     clickedPoint.countryName = data.countryName || "";
     clickedPoint.countryCode = data.countryCode || "";
 
-    // Show the options under the field being edited
+    // Show the suggestions as clickable buttons
     hideStatus();
-    const fieldWord = activeField === "from" ? "From" : "To";
-    renderFieldOptions(activeField,
-      'Near your click - pick one for "' + fieldWord + '":',
-      suggestions.slice(0, 6));
+    suggestionsTitle.innerHTML = pickingHome
+      ? icon("house") + " Places near where you clicked. Pick where you are:"
+      : icon("target") + " Places near where you clicked. Pick the most precise one:";
+    suggestionButtons.innerHTML = "";
+    for (const s of suggestions.slice(0, 7)) {
+      const button = document.createElement("button");
+      button.innerHTML = s.name + "<small>" + s.label + "</small>";
+      button.addEventListener("click", function () {
+        choosePlace(s.name);
+      });
+      suggestionButtons.appendChild(button);
+    }
+    suggestionsBox.hidden = false;
   } catch (error) {
     showStatus("Could not look up that spot. Please try again.", "triangle-alert");
   }
@@ -890,8 +827,9 @@ function roughDistance(lat1, lon1, lat2, lon2) {
   return dLat * dLat + dLon * dLon;
 }
 
-async function resolveNearbyName(name) {
-  showStatus("Locating " + name + "...");
+async function choosePlace(name) {
+  suggestionsBox.hidden = true;
+  showStatus("Loading travel info for " + name + "...");
 
   try {
     const url =
@@ -930,14 +868,12 @@ async function resolveNearbyName(name) {
       };
     } else {
       showStatus("Sorry, we couldn't find \"" + name + "\".", "frown");
-      return null;
+      return;
     }
 
-    hideStatus();
-    return destination;
+    await handleChosenPlace(destination);
   } catch (error) {
     showStatus("Something went wrong. Please check your connection and try again.", "triangle-alert");
-    return null;
   }
 }
 
@@ -958,10 +894,11 @@ async function searchDestination(cityName) {
         showStatus("Sorry, we couldn't find \"" + cityName + "\".", "frown");
         return;
       }
-      await openTrip(options[0].dest, { animate: false });
+      pointGlobeAt(options[0].dest.latitude, options[0].dest.longitude);
+      await handleChosenPlace(options[0].dest);
       return;
     }
-    await openTrip(placeToDestination(data.results[0]), { animate: false });
+    await handleChosenPlace(placeToDestination(data.results[0]));
   } catch (error) {
     showStatus("Something went wrong. Please check your connection and try again.", "triangle-alert");
   }
@@ -989,159 +926,32 @@ function placeToDestination(place) {
   };
 }
 
-// Rotate the globe smoothly until a place faces us
-let globeAnim = null;
+// Spin the globe to a place and drop the red pin on it
 function pointGlobeAt(lat, lon) {
   stopAutoSpin();
-  const targetLat = Math.max(-85, Math.min(85, lat));
-  if (REDUCED_MOTION) {
-    rotationLat = targetLat;
-    rotationLon = lon;
-    drawGlobe();
-    return;
+  clickedPoint = { lat: lat, lon: lon };
+  rotationLon = lon;
+  rotationLat = Math.max(-85, Math.min(85, lat));
+  drawGlobe();
+}
+
+/* ---- The small search bar: type an exact location ---- */
+searchForm.addEventListener("submit", function (event) {
+  event.preventDefault(); // stop the page from reloading
+  const text = searchInput.value.trim();
+  if (text !== "") {
+    searchExactLocation(text);
   }
-  // take the short way around
-  const dLon = ((lon - rotationLon + 540) % 360) - 180;
-  const startLat = rotationLat;
-  const startLon = rotationLon;
-  const started = performance.now();
-  const DURATION = 700;
-  if (globeAnim) cancelAnimationFrame(globeAnim);
-  function step(now) {
-    const p = Math.min(1, (now - started) / DURATION);
-    const ease = 1 - Math.pow(1 - p, 3);
-    rotationLat = startLat + (targetLat - startLat) * ease;
-    rotationLon = startLon + dLon * ease;
-    drawGlobe();
-    if (p < 1) globeAnim = requestAnimationFrame(step);
-  }
-  globeAnim = requestAnimationFrame(step);
-}
-
-/* ------------------------------------------------------------
-   THE PLANNER
-   One compact form: From, To, optional dates, one button. Globe
-   clicks fill whichever field is being edited. Autocomplete
-   options appear directly under the matching field.
-   ------------------------------------------------------------ */
-function inputElFor(field) { return field === "from" ? homeInput : searchInput; }
-function suggestElFor(field) { return field === "from" ? fromSuggest : toSuggest; }
-
-function clearSuggest(field) {
-  const el = suggestElFor(field);
-  el.hidden = true;
-  el.innerHTML = "";
-}
-
-// Draw a titled list of place options under a field. Each option
-// is either {dest, label} (fully resolved) or {name, label} (a
-// nearby name that still needs locating).
-function renderFieldOptions(field, title, options) {
-  const el = suggestElFor(field);
-  el.innerHTML = "";
-  const heading = document.createElement("p");
-  heading.className = "suggest-title";
-  heading.textContent = title;
-  el.appendChild(heading);
-  const wrap = document.createElement("div");
-  wrap.className = "suggest-options";
-  options.forEach(function (opt) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.append(opt.dest ? opt.dest.name : opt.name);
-    const small = document.createElement("small");
-    small.textContent = opt.label || "";
-    button.appendChild(small);
-    button.addEventListener("click", async function () {
-      clearSuggest(field);
-      if (opt.dest) {
-        setFieldPlace(field, opt.dest);
-      } else {
-        const dest = await resolveNearbyName(opt.name);
-        if (dest) setFieldPlace(field, dest);
-      }
-      // picked while "Plan trip" was waiting on this choice?
-      // carry on planning without another button press.
-      if (planPending) {
-        planPending = false;
-        planTrip();
-      }
-    });
-    wrap.appendChild(button);
-  });
-  el.appendChild(wrap);
-  el.hidden = false;
-}
-
-// A field got its place: remember it, mark it on the globe, and
-// rotate there smoothly.
-function setFieldPlace(field, dest) {
-  hideStatus();
-  clearSuggest(field);
-  inputElFor(field).value = dest.name;
-  if (field === "from") {
-    plannerFrom = dest;
-    routeHome = { lat: dest.latitude, lon: dest.longitude };
-    // remember home for next visit
-    localStorage.setItem("travelBuddyHome", JSON.stringify({
-      name: dest.name,
-      country: dest.country,
-      latitude: dest.latitude,
-      longitude: dest.longitude,
-    }));
-  } else {
-    plannerTo = dest;
-    routeDest = { lat: dest.latitude, lon: dest.longitude };
-  }
-  clickedPoint = null;
-  pointGlobeAt(dest.latitude, dest.longitude);
-}
-
-homeInput.addEventListener("focus", function () { activeField = "from"; });
-searchInput.addEventListener("focus", function () { activeField = "to"; });
-homeInput.addEventListener("input", function () { plannerFrom = null; clearSuggest("from"); });
-searchInput.addEventListener("input", function () { plannerTo = null; clearSuggest("to"); });
-
-plannerForm.addEventListener("submit", async function (event) {
-  event.preventDefault();
-  await planTrip();
 });
 
-let planPending = false; // "Plan trip" paused on a choice
-async function planTrip() {
-  const fromText = homeInput.value.trim();
-  const toText = searchInput.value.trim();
-  if (!fromText) {
-    showStatus('Where are you starting from? Fill in "From".', "house");
-    homeInput.focus();
-    return;
-  }
-  if (!toText) {
-    showStatus('Where are you going? Fill in "To".', "target");
-    searchInput.focus();
-    return;
-  }
-  if (!plannerFrom || plannerFrom.name.toLowerCase() !== fromText.toLowerCase()) {
-    const resolved = await resolveFieldInput("from", fromText);
-    if (!resolved) { planPending = true; return; }
-  }
-  if (!plannerTo || plannerTo.name.toLowerCase() !== toText.toLowerCase()) {
-    const resolved = await resolveFieldInput("to", toText);
-    if (!resolved) { planPending = true; return; }
-  }
-  planPending = false;
-  await openTrip(plannerTo, { animate: true });
-}
-
-// Turn typed text into a real place. Returns true when the field
-// resolved to exactly one place; false when options were shown or
-// nothing was found.
-async function resolveFieldInput(field, name) {
-  clearSuggest(field);
-  showStatus('Searching for "' + name + '"...', "search");
+async function searchExactLocation(name) {
+  suggestionsBox.hidden = true;
+  showStatus("Searching for \"" + name + "\"...", "search");
 
   try {
-    // Open-Meteo's geocoder first - fast and great for cities
+    // First ask Open-Meteo's geocoder — fast and great for cities.
+    // Each option is {dest, label}: the place, and a small line
+    // saying where it is.
     const url =
       "https://geocoding-api.open-meteo.com/v1/search?count=5&name=" +
       encodeURIComponent(name);
@@ -1154,28 +964,50 @@ async function resolveFieldInput(field, name) {
       };
     });
 
-    // It only knows cities. Nothing found (a state, a region)?
-    // OpenStreetMap's geocoder understands those.
+    // Open-Meteo only knows cities and towns. If it found nothing
+    // (e.g. "Tamil Nadu" or "Provence"), ask OpenStreetMap's
+    // geocoder, which understands states, districts and regions.
     if (options.length === 0) {
       options = await searchNominatim(name);
     }
 
     if (options.length === 0) {
-      showStatus('We couldn\'t find "' + name + '". Try another spelling.', "frown");
-      return false;
+      showStatus("Sorry, we couldn't find \"" + name + "\". Try another spelling!", "frown");
+      return;
     }
 
+    // Choosing an option points the globe there and loads it
+    function chooseOption(option) {
+      suggestionsBox.hidden = true;
+      pointGlobeAt(option.dest.latitude, option.dest.longitude);
+      handleChosenPlace(option.dest);
+    }
+
+    // Exactly one match — go straight there
     if (options.length === 1) {
-      setFieldPlace(field, options[0].dest);
-      return true;
+      chooseOption(options[0]);
+      return;
     }
 
+    // Several places share this name (Paris, France vs Paris,
+    // Texas...) — let the user pick the exact one.
     hideStatus();
-    renderFieldOptions(field, "Several places match - pick the exact one:", options);
-    return false;
+    suggestionsTitle.innerHTML = icon("target") + " Several places match. Pick the exact one:";
+    suggestionButtons.innerHTML = "";
+    for (const option of options) {
+      const button = document.createElement("button");
+      button.append(option.dest.name);
+      const small = document.createElement("small");
+      small.textContent = option.label;
+      button.appendChild(small);
+      button.addEventListener("click", function () {
+        chooseOption(option);
+      });
+      suggestionButtons.appendChild(button);
+    }
+    suggestionsBox.hidden = false;
   } catch (error) {
-    showStatus("Something went wrong. Check your connection and try again.", "triangle-alert");
-    return false;
+    showStatus("Something went wrong. Please check your connection and try again.", "triangle-alert");
   }
 }
 
@@ -1218,120 +1050,400 @@ async function searchNominatim(name) {
   });
 }
 
-/* ------------------------------------------------------------
-   OPENING A TRIP
-   The trip screen appears immediately (fully usable), the globe
-   shrinks into its header showing the route, and - only when a
-   trip is newly created - a little plane glides along the arc.
-   ------------------------------------------------------------ */
-async function openTrip(destination, options) {
-  const animate = options && options.animate && !REDUCED_MOTION;
-
-  // keep the address bar in sync (without re-triggering ourselves)
-  const hash = tripHash(destination);
-  if (location.hash !== hash) {
-    suppressRouteRender = true;
-    location.hash = hash;
+/* Every way of picking a place (globe click, search bar, saved
+   trip) lands here. During step 1 the chosen place becomes the
+   user's HOME; afterwards it is a travel destination. */
+async function handleChosenPlace(destination) {
+  if (pickingHome) {
+    finishHomeSetup(destination);
+  } else {
+    await showDestination(destination);
   }
+}
 
-  // the route shown on the globe
-  const home = getHomeLocation();
-  routeHome = home ? { lat: home.latitude, lon: home.longitude } : null;
-  routeDest = { lat: destination.latitude, lon: destination.longitude };
-  clickedPoint = null;
+// Step 1 complete: remember home, play the plane transition,
+// then switch the page into "explore" mode.
+function finishHomeSetup(destination) {
+  localStorage.setItem("travelBuddyHome", JSON.stringify({
+    name: destination.name,
+    country: destination.country,
+    latitude: destination.latitude,
+    longitude: destination.longitude,
+  }));
+  homeInput.value = destination.name;
 
-  showView("trip");
-  setActiveTab("overview");
-  window.scrollTo(0, 0);
+  hideStatus();
+  suggestionsBox.hidden = true;
+  pickingHome = false;
 
-  // coming back to the trip already on screen? keep everything
-  const sameTrip = currentDestination &&
-    currentDestination.name === destination.name &&
-    Math.abs(currentDestination.latitude - destination.latitude) < 0.01;
-
-  pointGlobeAt(destination.latitude, destination.longitude);
-  if (animate) flyRoutePlane();
-  if (sameTrip) return;
-
-  await showDestination(destination);
+  playPlaneTransition();
 }
 
 /* ------------------------------------------------------------
-   THE ROUTE FLIGHT
-   A small plane glides along the arc between home and the
-   destination - a quick ~800ms flourish when a trip is created.
-   The screen underneath is already fully usable, and people who
-   prefer reduced motion never see it.
+   THE PAGE-SWIPE TRANSITION
+   The plane sweeps across the screen like a windscreen wiper:
+   ahead of it (white side of the video) the real FIRST page is
+   still there; behind it the real SECOND page is revealed.
+
+   The trick that makes it perfectly smooth: the plane picture is
+   cut out of the video ONCE, then the sweep is just one gliding
+   element plus a clip that follows it — no video decoding and no
+   pixel work during the animation at all.
    ------------------------------------------------------------ */
 
-// A point part-way along the great circle between two places
-function greatCirclePoint(a, b, t) {
-  const toRad = Math.PI / 180;
-  const lat1 = a.lat * toRad, lon1 = a.lon * toRad;
-  const lat2 = b.lat * toRad, lon2 = b.lon * toRad;
-  const x1 = Math.cos(lat1) * Math.cos(lon1), y1 = Math.cos(lat1) * Math.sin(lon1), z1 = Math.sin(lat1);
-  const x2 = Math.cos(lat2) * Math.cos(lon2), y2 = Math.cos(lat2) * Math.sin(lon2), z2 = Math.sin(lat2);
-  const omega = Math.acos(Math.max(-1, Math.min(1, x1 * x2 + y1 * y2 + z1 * z2))) || 0.000001;
-  const sA = Math.sin((1 - t) * omega) / Math.sin(omega);
-  const sB = Math.sin(t * omega) / Math.sin(omega);
-  const x = sA * x1 + sB * x2, y = sA * y1 + sB * y2, z = sA * z1 + sB * z2;
-  return { lat: Math.asin(Math.max(-1, Math.min(1, z))) / toRad, lon: Math.atan2(y, x) / toRad };
+// Which video pixels are background? We grab the plane from a
+// moment when the whole screen behind it is one flat gray,
+// measured from the file as (190, 203, 209). ONLY pixels close to
+// that exact colour count as background — so the plane's dark
+// windows, its shiny white spots and every other detail can never
+// be mistaken for background and punched out.
+// The video only ever shows two backgrounds: the white first page
+// (255,255,255) and the gray second page (190,203,209). Any pixel
+// that sits on the straight blend between those two colours (that
+// includes the soft wipe edge between them) is background. The
+// plane itself is warm cream (more red than blue), so it never
+// lands on that blend line.
+function isVideoBackground(r, g, b) {
+  const mix = Math.max(0, Math.min(1, (r - 190) / 65));
+  return (
+    Math.abs(r - (190 + 65 * mix)) <= 12 &&
+    Math.abs(g - (203 + 52 * mix)) <= 12 &&
+    Math.abs(b - (209 + 46 * mix)) <= 12
+  );
 }
 
-// A dot marking home (blue) or the destination (red) on the globe
-function drawMarker(ctx, lat, lon, color) {
-  const p = projectPoint(lat, lon);
-  if (!p.front) return;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 2.5;
-  ctx.stroke();
+// Exact matches for each page colour, used to check we grabbed the
+// right video frame before cutting the plane out of it.
+function isPageGray(r, g, b) {
+  return Math.abs(r - 190) <= 10 && Math.abs(g - 203) <= 10 && Math.abs(b - 209) <= 10;
+}
+function isPageWhite(r, g, b) {
+  return r >= 245 && g >= 245 && b >= 245;
 }
 
-// The dashed route between them, following the Earth's curve
-function drawRouteArc(ctx, from, to) {
-  ctx.strokeStyle = "rgba(45, 212, 191, 0.95)";
-  ctx.lineWidth = 3;
-  ctx.setLineDash([8, 9]);
-  drawGridLine(ctx, function (step) {
-    const q = greatCirclePoint(from, to, step / 60);
-    return projectPoint(q.lat, q.lon);
-  }, 61);
-  ctx.setLineDash([]);
-}
+// Cut the plane out of the video into a transparent image.
+// Done once, then remembered.
+let planeSprite = null;
+async function getPlaneSprite() {
+  if (planeSprite) return planeSprite;
 
-// The little plane that flies the arc when a trip is created
-function flyRoutePlane() {
-  if (!routeHome || !routeDest || !routePlane) return;
-  routePlane.innerHTML = icon("plane");
-  routePlane.hidden = false;
-  const DURATION = 800;
-  const started = performance.now();
-
-  function place(t) {
-    const rect = globeCanvas.getBoundingClientRect();
-    const scale = rect.width / GLOBE_SIZE;
-    const q = greatCirclePoint(routeHome, routeDest, t);
-    const p = projectPoint(q.lat, q.lon);
-    const q2 = greatCirclePoint(routeHome, routeDest, Math.min(1, t + 0.05));
-    const p2 = projectPoint(q2.lat, q2.lon);
-    const angle = Math.atan2(p2.y - p.y, p2.x - p.x) * 180 / Math.PI;
-    routePlane.style.left = (rect.left + p.x * scale - 14) + "px";
-    routePlane.style.top = (rect.top + p.y * scale - 14) + "px";
-    routePlane.style.transform = "rotate(" + (angle + 45) + "deg)";
-    routePlane.style.opacity = p.front ? "1" : "0";
+  const video = document.getElementById("plane-video");
+  if (!video.videoWidth) {
+    await new Promise(function (resolve, reject) {
+      video.onloadeddata = resolve;
+      video.onerror = reject;
+    });
   }
 
-  function step(now) {
-    const t = Math.min(1, (now - started) / DURATION);
-    place(0.5 - Math.cos(Math.PI * t) / 2); // gentle ease in-out
-    if (t < 1) requestAnimationFrame(step);
-    else setTimeout(function () { routePlane.hidden = true; }, 150);
+  // Jump to the moment mid-wipe when the WHOLE plane is on screen
+  // (later frames have its nose already off the right edge).
+  // Seeking can land on the wrong frame while the video is still
+  // loading, so check the frame looks right — gray page on the
+  // left, white page on the right — and retry until it does.
+  const W = 960, H = 540;
+  const work = document.createElement("canvas");
+  work.width = W;
+  work.height = H;
+  const ctx = work.getContext("2d", { willReadFrequently: true });
+
+  let frame = null;
+  for (const t of [0.7, 0.72, 0.66, 0.74, 0.7]) {
+    video.currentTime = t;
+    await new Promise(function (resolve) { video.onseeked = resolve; });
+    await new Promise(function (resolve) { setTimeout(resolve, 60); });
+    ctx.drawImage(video, 0, 0, W, H);
+    frame = ctx.getImageData(0, 0, W, H);
+    let grayHits = 0, whiteHits = 0, checks = 0;
+    for (let y = 10; y < H - 10; y += 5) {
+      checks++;
+      let i = (y * W + 8) * 4; // a column near the left edge
+      if (isPageGray(frame.data[i], frame.data[i + 1], frame.data[i + 2])) grayHits++;
+      i = (y * W + 930) * 4; // a column near the right edge
+      if (isPageWhite(frame.data[i], frame.data[i + 1], frame.data[i + 2])) whiteHits++;
+    }
+    if (grayHits > checks * 0.9 && whiteHits > checks * 0.9) break;
+    frame = null;
   }
-  requestAnimationFrame(step);
+  if (!frame) throw new Error("could not reach the mid-wipe frame");
+  const px = frame.data;
+
+  // Remove the background with a "flood fill" from the picture's
+  // borders: like pouring water in from every edge, it erases all
+  // the gray it can flow into — even the pockets between the wings
+  // and the body — while everything inside the plane's outline
+  // stays untouched.
+
+  const visited = new Uint8Array(W * H);
+  const queue = [];
+
+  function pour(p) {
+    if (visited[p]) return;
+    const i = p * 4;
+    if (!isVideoBackground(px[i], px[i + 1], px[i + 2])) return;
+    visited[p] = 1;
+    px[i + 3] = 0; // erase this background pixel
+    queue.push(p);
+  }
+
+  // The video has a thin strip of compression junk along its right
+  // and bottom edges that is neither page colour — wipe it out
+  // directly and let the flood spread inward from there too.
+  function forceErase(p) {
+    if (visited[p]) return;
+    visited[p] = 1;
+    px[p * 4 + 3] = 0;
+    queue.push(p);
+  }
+  for (let y = 0; y < H; y++) {
+    for (let x = 936; x < W; x++) forceErase(y * W + x);
+  }
+  for (let y = 532; y < H; y++) {
+    for (let x = 0; x < W; x++) forceErase(y * W + x);
+  }
+
+  // Start pouring from every border pixel...
+  for (let x = 0; x < W; x++) { pour(x); pour((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { pour(y * W); pour(y * W + W - 1); }
+
+  // ...and let it spread to the neighbours, over and over
+  while (queue.length > 0) {
+    const p = queue.pop();
+    const x = p % W;
+    if (x > 0) pour(p - 1);
+    if (x < W - 1) pour(p + 1);
+    if (p >= W) pour(p - W);
+    if (p < W * (H - 1)) pour(p + W);
+  }
+
+  // Clean-up pass: the dashed flight-path line and stray specks
+  // leave leftover blobs. Group the visible pixels into connected
+  // "islands" and keep ONLY the biggest one — the plane.
+  const island = new Int32Array(W * H); // 0 = not labelled yet
+  let islandId = 0;
+  const allIslands = [];
+  for (let start = 0; start < W * H; start++) {
+    if (px[start * 4 + 3] === 0 || island[start] !== 0) continue;
+
+    // Collect this whole island
+    islandId++;
+    const members = [start];
+    island[start] = islandId;
+    for (let k = 0; k < members.length; k++) {
+      const p = members[k];
+      const x = p % W;
+      const around = [];
+      if (x > 0) around.push(p - 1);
+      if (x < W - 1) around.push(p + 1);
+      if (p >= W) around.push(p - W);
+      if (p < W * (H - 1)) around.push(p + W);
+      for (const n of around) {
+        if (px[n * 4 + 3] > 0 && island[n] === 0) {
+          island[n] = islandId;
+          members.push(n);
+        }
+      }
+    }
+    allIslands.push(members);
+  }
+  allIslands.sort(function (a, b) { return b.length - a.length; });
+  for (let k = 1; k < allIslands.length; k++) {
+    for (const p of allIslands[k]) px[p * 4 + 3] = 0;
+  }
+
+  // Safety pass: make the plane SOLID. Any erased pocket that is
+  // fully enclosed by the plane (not connected to the outside) gets
+  // its original colour back, so the body can never be see-through.
+  const outside = new Uint8Array(W * H);
+  const oq = [];
+  function mark(p) {
+    if (outside[p] || px[p * 4 + 3] > 0) return;
+    outside[p] = 1;
+    oq.push(p);
+  }
+  for (let x = 0; x < W; x++) { mark(x); mark((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { mark(y * W); mark(y * W + W - 1); }
+  while (oq.length > 0) {
+    const p = oq.pop();
+    const x = p % W;
+    if (x > 0) mark(p - 1);
+    if (x < W - 1) mark(p + 1);
+    if (p >= W) mark(p - W);
+    if (p < W * (H - 1)) mark(p + W);
+  }
+  for (let p = 0; p < W * H; p++) {
+    if (px[p * 4 + 3] === 0 && !outside[p]) px[p * 4 + 3] = 255;
+  }
+
+  // Find the box around what is left (the plane)
+  let top = H, bottom = 0, leftMost = W, rightMost = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (px[(y * W + x) * 4 + 3] > 0) {
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
+        if (x < leftMost) leftMost = x;
+        if (x > rightMost) rightMost = x;
+      }
+    }
+  }
+  if (rightMost <= leftMost) throw new Error("no plane found in video");
+  ctx.putImageData(frame, 0, 0);
+
+  // Crop tightly around the plane
+  const sw = rightMost - leftMost + 1;
+  const sh = bottom - top + 1;
+  const sprite = document.createElement("canvas");
+  sprite.width = sw;
+  sprite.height = sh;
+  sprite.getContext("2d").drawImage(work, leftMost, top, sw, sh, 0, 0, sw, sh);
+
+  planeSprite = { canvas: sprite, heightShare: sh / H, topShare: top / H };
+  return planeSprite;
+}
+
+// A gentle speed curve: slow start, fast middle, soft landing
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function playPlaneTransition() {
+  planeOverlay.hidden = false;
+  window.scrollTo(0, 0); // the sweep happens over the hero
+
+  // ---- Build the "second page" preview layer ----
+  // A copy of the hero with the step-2 words already in place.
+  const hero = document.querySelector(".hero");
+  const heroRect = hero.getBoundingClientRect();
+  const preview = document.createElement("div");
+  // The preview needs the page's own night-sky background so it
+  // fully covers the step-1 words underneath the revealed part.
+  preview.style.cssText =
+    "position:absolute; inset:0; clip-path:inset(0 100% 0 0);" +
+    "background: radial-gradient(120% 100% at 50% 115%," +
+    " #2e4d80 0%, #1a2b4a 40%, #0b1222 70%, #04060c 100%) #04060c;";
+
+  // The navbar looks the same on both steps — copy it so it does
+  // not vanish behind the preview's background.
+  const navCopy = document.querySelector(".navbar").cloneNode(true);
+  navCopy.style.cssText = "position:absolute; top:0; left:0; right:0;";
+  preview.appendChild(navCopy);
+
+  const heroCopy = hero.cloneNode(true);
+  heroCopy.querySelector("#hero-title").textContent =
+    "Where do you plan to explore?";
+  heroCopy.querySelector("#hero-subtitle").textContent =
+    "Weather, destination info, daylight and currency, all in one place.";
+  heroCopy.querySelector("#hero-hint").innerHTML =
+    icon("globe") + " Spin the globe, then click where you want to go.";
+  heroCopy.querySelector("#search-input").value = "";
+  heroCopy.querySelector("#search-input").placeholder =
+    "or type a place, e.g. Paris";
+  heroCopy.querySelector("#status-message").hidden = true;
+  heroCopy.querySelector("#suggestions").hidden = true;
+  const globeCopy = heroCopy.querySelector("#globe");
+
+  // Two elements must never share an id — strip them off the copy
+  heroCopy.removeAttribute("id");
+  heroCopy.querySelectorAll("[id]").forEach(function (el) {
+    el.removeAttribute("id");
+  });
+
+  // Pin the copy exactly over the real hero
+  heroCopy.style.cssText =
+    "position:absolute; top:" + heroRect.top + "px; left:" + heroRect.left +
+    "px; width:" + heroRect.width + "px;";
+
+  // The clone lost its ids, so the "#globe" size rule no longer
+  // applies to it — give it the real globe's size directly, so the
+  // globe stays EXACTLY the same size and place during the sweep.
+  const globeRect = globeCanvas.getBoundingClientRect();
+  globeCopy.style.width = globeRect.width + "px";
+  globeCopy.style.height = globeRect.height + "px";
+
+  preview.appendChild(heroCopy);
+  planeOverlay.appendChild(preview);
+
+  // A cloned <canvas> starts blank — repaint the globe onto it
+  globeCopy.getContext("2d").drawImage(globeCanvas, 0, 0);
+
+  let finished = false;
+
+  // Completely done: make the real page step 2 and clean up
+  function endTransition(spriteEl) {
+    if (finished) return;
+    finished = true;
+    applyStageText();
+    preview.remove();
+    if (spriteEl) spriteEl.remove();
+    planeElement.hidden = true; // in case the emoji backup ran
+    planeOverlay.hidden = true;
+  }
+
+  // Backup plan: no usable video? Fly the ✈️ emoji instead.
+  function useEmojiInstead() {
+    preview.style.clipPath = "inset(0 0 0 0)"; // show page 2 fully
+    planeElement.hidden = false;
+    planeElement.style.animation = "none";
+    void planeElement.offsetWidth; // restart the CSS animation
+    planeElement.style.animation = "";
+    setTimeout(function () { endTransition(null); }, 2600);
+  }
+
+  // ---- The sweep itself ----
+  getPlaneSprite().then(function (sprite) {
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+
+    // Size the plane like it appears in the video (same share of
+    // the screen height, same vertical position)
+    // Size the plane against the SMALLER screen side, so on tall
+    // phone screens it stays crisp and proportionate instead of
+    // being blown up to full height and turning pixelated.
+    const frameH = Math.min(screenH, screenW);
+    const planeH = sprite.heightShare * frameH;
+    const planeW = planeH * (sprite.canvas.width / sprite.canvas.height);
+    const planeTop = sprite.topShare * frameH + (screenH - frameH) / 2;
+    const spriteEl = sprite.canvas;
+    spriteEl.style.cssText =
+      "position:absolute; left:0; top:" + planeTop + "px;" +
+      "height:" + planeH + "px; width:" + planeW + "px;" +
+      "will-change: transform;";
+    spriteEl.style.transform = "translateX(" + (-planeW) + "px)";
+    planeOverlay.appendChild(spriteEl);
+
+    // One shared timeline drives the plane AND the reveal, so the
+    // page-2 edge is always exactly at the plane's nose.
+    const DURATION = 1700; // milliseconds
+    const startedAt = performance.now();
+
+    function tick(now) {
+      if (finished) return;
+      const progress = Math.min(1, (now - startedAt) / DURATION);
+      const eased = easeInOutCubic(progress);
+
+      // The nose travels from the left edge right off the screen
+      const nose = eased * (screenW + planeW);
+      spriteEl.style.transform =
+        "translateX(" + (nose - planeW) + "px)";
+
+      const revealPercent = Math.min(100, (nose / screenW) * 100);
+      preview.style.clipPath =
+        "inset(0 " + (100 - revealPercent) + "% 0 0)";
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        endTransition(spriteEl);
+      }
+    }
+    requestAnimationFrame(tick);
+
+    // Guaranteed landing, even if animation frames get throttled
+    setTimeout(function () { endTransition(spriteEl); }, DURATION + 200);
+  }).catch(useEmojiInstead);
+
+  // Safety net: never leave the user stuck on the overlay
+  setTimeout(function () { endTransition(null); }, 6000);
 }
 
 // Shared by both flows above: show the header, then fill every card
@@ -1340,17 +1452,20 @@ async function showDestination(destination) {
 
   destinationCity.textContent = destination.name;
   destinationCountry.textContent = destination.country;
-  renderTripRouteLine();
+  destinationHeader.hidden = false;
+  cardsSection.hidden = false;
+
   updateSaveButton();
   suggestDestinationCurrency();
+
+  // Scroll to the results RIGHT AWAY (the cards fill in as data
+  // arrives). Scrolling after the fetches finished caused a bug:
+  // if an API was slow, the page suddenly jumped down seconds
+  // later, stealing the user's next click on the globe.
   hideStatus();
+  destinationHeader.scrollIntoView({ behavior: "smooth" });
 
-  // fresh panels for the new place
-  tripFacts = {};
-  renderQuickFacts();
-  checklistEl.innerHTML = "<li class='muted'>Waiting for the live weather...</li>";
-
-  // Weather first - its reply also tells us the local timezone,
+  // Weather first — its reply also tells us the local timezone,
   // which the sunrise/sunset card needs.
   await loadWeather();
   await Promise.all([
@@ -1363,69 +1478,6 @@ async function showDestination(destination) {
   ]);
 }
 
-// The small line under the trip title: "From Chennai · 3 Nov – 10 Nov"
-function renderTripRouteLine() {
-  const home = getHomeLocation();
-  let line = home ? "From " + home.name : "";
-  if (dateStart.value) {
-    const fmt = function (v) {
-      return new Date(v + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" });
-    };
-    line += (line ? "  ·  " : "") + fmt(dateStart.value) +
-      (dateEnd.value ? " – " + fmt(dateEnd.value) : "");
-  }
-  tripRoute.textContent = line;
-}
-
-/* ---- Quick facts: the at-a-glance strip on the Overview tab ---- */
-let tripFacts = {};
-function fact(key, html) {
-  tripFacts[key] = html;
-  renderQuickFacts();
-}
-function renderQuickFacts() {
-  const order = ["weather", "time", "distance", "sos"];
-  quickFacts.innerHTML = order
-    .filter(function (k) { return tripFacts[k]; })
-    .map(function (k) { return "<div class='fact'>" + tripFacts[k] + "</div>"; })
-    .join("");
-}
-
-/* ---- The "Before you go" checklist, built from the weather ---- */
-function renderChecklist(current, daily) {
-  const items = packingSuggestions(current, daily);
-  items.push({ icon: "map", text: "Download offline maps for the area" });
-  items.push({ icon: "shield", text: "Passport / ID and any visas sorted" });
-
-  // ticks are remembered per destination
-  const key = "abygoChecklist:" + (currentDestination ? currentDestination.name : "");
-  let ticked = [];
-  try { ticked = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
-
-  checklistEl.innerHTML = "";
-  items.forEach(function (item) {
-    const li = document.createElement("li");
-    const label = document.createElement("label");
-    const box = document.createElement("input");
-    box.type = "checkbox";
-    box.checked = ticked.indexOf(item.text) !== -1;
-    li.classList.toggle("done", box.checked);
-    box.addEventListener("change", function () {
-      let now = [];
-      try { now = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
-      if (box.checked) now.push(item.text);
-      else now = now.filter(function (t) { return t !== item.text; });
-      localStorage.setItem(key, JSON.stringify(now));
-      li.classList.toggle("done", box.checked);
-    });
-    label.appendChild(box);
-    label.insertAdjacentHTML("beforeend", chip(item.icon));
-    label.appendChild(document.createTextNode(item.text));
-    li.appendChild(label);
-    checklistEl.appendChild(li);
-  });
-}
-
 /* ------------------------------------------------------------
    5. WEATHER (Open-Meteo Weather API)
    ------------------------------------------------------------ */
@@ -1434,8 +1486,6 @@ function renderChecklist(current, daily) {
 // This little table turns the code into words + an emoji icon.
 /* What to pack: clothing and props suggested from the live
    weather - umbrella for rain, layers by temperature, and so on. */
-let lastWeatherNote = "";
-let lastWeatherIcon = "";
 function packingSuggestions(current, daily) {
   const code = current.weather_code;
   const t = current.temperature_2m;
@@ -1545,6 +1595,15 @@ async function loadWeather() {
       forecastHTML += "</div>";
     }
 
+    // What to wear / carry, based on this weather
+    let packHTML = "";
+    const pack = packingSuggestions(current, data.daily);
+    if (pack.length > 0) {
+      packHTML = "<div class='pack'><p class='pack-title'>Don't forget!</p>" +
+        pack.map(function (p) {
+          return "<p class='weather-detail'>" + chip(p.icon) + p.text + "</p>";
+        }).join("") + "</div>";
+    }
 
     weatherContent.innerHTML =
       "<span class='weather-icon'>" + (WEATHER_EMOJI[weather.icon] || "🌡️") + "</span> " +
@@ -1553,13 +1612,8 @@ async function loadWeather() {
       "<p class='weather-detail'>" + chip("thermometer") + "Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +
       "<p class='weather-detail'>" + chip("droplets") + "Humidity: " + current.relative_humidity_2m + "%</p>" +
       "<p class='weather-detail'>" + chip("wind") + "Wind: " + Math.round(current.wind_speed_10m) + " km/h</p>" +
-      forecastHTML;
-
-    // feed the Overview tab: the quick-facts strip + the checklist
-    lastWeatherNote = Math.round(current.temperature_2m) + "\u00b0C \u00b7 " + weather.text;
-    lastWeatherIcon = weather.icon;
-    fact("weather", chip(weather.icon) + lastWeatherNote);
-    renderChecklist(current, data.daily);
+      forecastHTML +
+      packHTML;
   } catch (error) {
     if (destination !== currentDestination) return;
     weatherContent.innerHTML = "<p class='muted'>" + icon("triangle-alert") + " Could not load the weather right now.</p>";
@@ -2205,6 +2259,53 @@ function getHomeLocation() {
   return stored ? JSON.parse(stored) : null;
 }
 
+// The user typed where they are — find it and remember it
+homeButton.addEventListener("click", setHomeLocation);
+homeInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") setHomeLocation();
+});
+
+async function setHomeLocation() {
+  const name = homeInput.value.trim();
+  if (name === "") return;
+
+  timezoneContent.innerHTML = "<p class='muted'>Finding " + name + "...</p>";
+
+  try {
+    const url =
+      "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" +
+      encodeURIComponent(name);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.results || data.results.length === 0) {
+      timezoneContent.innerHTML =
+        "<p class='muted'>" + icon("frown") + " Couldn't find \"" + name + "\". Try a nearby city.</p>";
+      return;
+    }
+
+    const place = data.results[0];
+    localStorage.setItem("travelBuddyHome", JSON.stringify({
+      name: place.name,
+      country: place.country || "",
+      latitude: place.latitude,
+      longitude: place.longitude,
+    }));
+    homeInput.value = place.name;
+
+    // Refresh both cards for the destination on screen (if any)
+    if (currentDestination) {
+      loadTimeDifference();
+      loadDistance();
+    } else {
+      timezoneContent.innerHTML =
+        "<p class='muted'>" + icon("check") + " Saved! Pick a destination to compare times.</p>";
+    }
+  } catch (error) {
+    timezoneContent.innerHTML =
+      "<p class='muted'>" + icon("triangle-alert") + " Could not look that up right now.</p>";
+  }
+}
 
 /* ---- Card: time zone difference ---- */
 async function loadTimeDifference() {
@@ -2265,11 +2366,6 @@ async function loadTimeDifference() {
       "<div class='tz-row'><span>" + chip("map-pin") + "" + destination.name + "</span>" +
       "<span class='tz-time'>" + wallClock(destTz) + "</span></div>" +
       "<p class='tz-diff'>" + diffText + "</p>";
-
-    fact("time", chip("clock") + (diffMinutes === 0
-      ? "Same time as home"
-      : hours + "h" + (minutes ? " " + minutes + "m" : "") +
-        (diffMinutes > 0 ? " ahead" : " behind")));
   } catch (error) {
     if (destination !== currentDestination) return;
     timezoneContent.innerHTML =
@@ -2293,6 +2389,13 @@ function distanceInKm(lat1, lon1, lat2, lon2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+// Typical average speeds, in km/h — rough estimates for fun
+const TRAVEL_MODES = [
+  { icon: "plane", label: "Flight", speed: 800 },
+  { icon: "train-front", label: "Train", speed: 90 },
+  { icon: "car", label: "Car", speed: 65 },
+  { icon: "ship", label: "Ship", speed: 40 },
+];
 
 // Turn hours into a friendly "2d 5h" / "3h 20m" text
 function formatDuration(hoursTotal) {
@@ -2320,29 +2423,20 @@ function loadDistance() {
     destination.latitude, destination.longitude
   );
 
-  // Only offer transport that makes sense for the distance: a
-  // car or train estimate across an ocean would just be noise.
-  const modes = [{ icon: "plane", label: "Flight", speed: 800 }];
-  if (km < 1500) {
-    modes.push({ icon: "train-front", label: "Train", speed: 90 });
-    modes.push({ icon: "car", label: "Car", speed: 65 });
-  }
   let modesHTML = "<div class='travel-modes'>";
-  for (const mode of modes) {
+  for (const mode of TRAVEL_MODES) {
     modesHTML +=
       "<div><span>" + chip(mode.icon) + "" + mode.label + "</span>" +
       "<span>" + formatDuration(km / mode.speed) + "</span></div>";
   }
   modesHTML += "</div>";
 
-  fact("distance", chip("plane") + Math.round(km).toLocaleString() + " km away");
-
   distanceContent.innerHTML =
     "<span class='distance-value'>" + Math.round(km).toLocaleString() + " km</span>" +
     "<p class='muted'>from " + home.name + ", as the crow flies</p>" +
     modesHTML +
     "<p class='muted' style='margin-top:8px; font-size:0.8rem;'>" +
-    "Rough estimates from average speeds \u2014 not real routes.</p>";
+    "Rough estimates from average speeds, not real routes.</p>";
 }
 
 /* ------------------------------------------------------------
@@ -2455,8 +2549,6 @@ async function loadEmergencyNumbers() {
       "<p class='muted emg-source'>For " + destination.country +
       " · <a href='" + EMERGENCY_PAGE +
       "' target='_blank' rel='noopener'>source: Wikipedia</a></p>";
-
-    fact("sos", chip("shield") + "Emergency " + (numbers.police || "112"));
   } catch (error) {
     if (destination !== currentDestination) return;
     emergencyContent.innerHTML =
@@ -2565,7 +2657,7 @@ function updateSaveButton() {
     saveButton.innerHTML = icon("heart", true) + " Saved";
     saveButton.classList.add("saved");
   } else {
-    saveButton.innerHTML = icon("heart") + " Save";
+    saveButton.innerHTML = icon("heart") + " Save Destination";
     saveButton.classList.remove("saved");
   }
 }
@@ -2580,14 +2672,6 @@ saveButton.addEventListener("click", function () {
     saved.push({
       name: currentDestination.name,
       country: currentDestination.country,
-      countryCode: currentDestination.countryCode || "",
-      latitude: currentDestination.latitude,
-      longitude: currentDestination.longitude,
-      kind: currentDestination.kind || "place",
-      dates: { start: dateStart.value || "", end: dateEnd.value || "" },
-      savedAt: Date.now(),
-      weatherNote: lastWeatherNote || "",
-      weatherIcon: lastWeatherIcon || "",
     });
   }
 
@@ -2596,99 +2680,47 @@ saveButton.addEventListener("click", function () {
   renderSavedList();
 });
 
-/* The Saved screen: each trip is a card with its dates, status
-   and the weather we last saw there. */
-function tripStatus(trip) {
-  if (!trip.dates || !trip.dates.start) return "Someday";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = new Date(trip.dates.start + "T00:00:00");
-  const end = trip.dates.end ? new Date(trip.dates.end + "T00:00:00") : start;
-  if (end < today) return "Past trip";
-  if (start <= today) return "Happening now";
-  const days = Math.round((start - today) / 86400000);
-  return "In " + days + " day" + (days === 1 ? "" : "s");
-}
-
+// Draw the "My Trips" list on the page
 function renderSavedList() {
   const saved = getSavedDestinations();
   savedList.innerHTML = "";
   noSavedMessage.hidden = saved.length > 0;
 
-  saved.forEach(function (trip) {
-    const card = document.createElement("div");
-    card.className = "saved-card";
+  for (const trip of saved) {
+    const item = document.createElement("li");
 
-    const title = document.createElement("h3");
-    title.textContent = trip.name;
-    const country = document.createElement("p");
-    country.className = "muted";
-    country.textContent = trip.country || "";
-
-    const meta = document.createElement("p");
-    meta.className = "saved-meta";
-    const fmt = function (v) {
-      return new Date(v + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" });
-    };
-    const dates = trip.dates && trip.dates.start
-      ? fmt(trip.dates.start) + (trip.dates.end ? " \u2013 " + fmt(trip.dates.end) : "")
-      : "No dates yet";
-    meta.innerHTML = chip("clock") + dates +
-      " \u00b7 <span class='saved-status'>" + tripStatus(trip) + "</span>";
-
-    card.appendChild(title);
-    card.appendChild(country);
-    card.appendChild(meta);
-
-    if (trip.weatherNote) {
-      const wx = document.createElement("p");
-      wx.className = "saved-meta";
-      wx.innerHTML = chip(trip.weatherIcon || "cloud-sun");
-      wx.appendChild(document.createTextNode(trip.weatherNote + " when last checked"));
-      card.appendChild(wx);
-    }
-
-    const actions = document.createElement("div");
-    actions.className = "saved-actions";
-
-    const open = document.createElement("button");
-    open.className = "btn btn-primary";
-    open.textContent = "Open";
-    open.addEventListener("click", function () {
-      if (typeof trip.latitude === "number") {
-        openTrip({
-          name: trip.name,
-          country: trip.country || "",
-          countryCode: trip.countryCode || "",
-          latitude: trip.latitude,
-          longitude: trip.longitude,
-          timezone: "",
-          kind: trip.kind || "place",
-        }, { animate: false });
-      } else {
-        // trips saved by an older version only kept the name
-        searchDestination(trip.name);
-      }
+    // Clicking the name loads that destination again
+    const nameButton = document.createElement("button");
+    nameButton.className = "trip-name";
+    nameButton.innerHTML = icon("heart", true) + " ";
+    nameButton.appendChild(document.createTextNode(trip.name));
+    nameButton.addEventListener("click", function () {
+      // A saved trip is always a DESTINATION, even if the page is
+      // still on the "where are you now?" step.
+      pickingHome = false;
+      applyStageText();
+      searchDestination(trip.name);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    const remove = document.createElement("button");
-    remove.className = "btn btn-ghost";
-    remove.setAttribute("aria-label", "Remove " + trip.name);
-    remove.innerHTML = icon("x");
-    remove.appendChild(document.createTextNode(" Remove"));
-    remove.addEventListener("click", function () {
-      setSavedDestinations(getSavedDestinations().filter(function (d) {
-        return d.name !== trip.name;
-      }));
+    // The little ✕ button removes the trip
+    const removeButton = document.createElement("button");
+    removeButton.className = "remove-trip";
+    removeButton.innerHTML = icon("x");
+    removeButton.title = "Remove " + trip.name;
+    removeButton.addEventListener("click", function () {
+      const remaining = getSavedDestinations().filter(
+        (d) => d.name !== trip.name
+      );
+      setSavedDestinations(remaining);
       renderSavedList();
       if (currentDestination) updateSaveButton();
     });
 
-    actions.appendChild(open);
-    actions.appendChild(remove);
-    card.appendChild(actions);
-    savedList.appendChild(card);
-  });
+    item.appendChild(nameButton);
+    item.appendChild(removeButton);
+    savedList.appendChild(item);
+  }
 }
 
 /* ------------------------------------------------------------
@@ -2708,25 +2740,16 @@ document.addEventListener("pointerdown", nudgeBackgroundVideo);
 document.addEventListener("keydown", nudgeBackgroundVideo);
 
 fillCurrencyDropdowns();
-
-// A remembered home pre-fills the "From" field
-const rememberedHome = getHomeLocation();
-if (rememberedHome) {
-  homeInput.value = rememberedHome.name;
-  plannerFrom = {
-    name: rememberedHome.name,
-    country: rememberedHome.country || "",
-    countryCode: "",
-    latitude: rememberedHome.latitude,
-    longitude: rememberedHome.longitude,
-    timezone: "",
-    kind: "place",
-  };
-  routeHome = { lat: rememberedHome.latitude, lon: rememberedHome.longitude };
+renderSavedList();
+// The journey ALWAYS begins at "Where are you now?". If a home
+// is remembered from last time, pre-type it in the search bar so
+// one click on 🔍 continues straight through.
+if (getHomeLocation()) {
+  homeInput.value = getHomeLocation().name;
+  searchInput.value = getHomeLocation().name;
 }
-
+applyStageText();
 drawGlobe();        // draw the plain globe right away
-renderRoute();      // then show whichever screen the URL asks for
 /* ------------------------------------------------------------
    OPENING TITLE VIDEO
    A short brand video that fades in, plays once, and fades out to
@@ -2767,4 +2790,4 @@ if (introEl && introVideo) {
 
 loadWorldShapes();  // then load the country shapes onto it
 loadEarthTexture(); // and the real satellite photo of Earth
-if (!viewPlan.hidden) startAutoSpin(); // gentle spin on the planner
+startAutoSpin();    // gently spin until the user grabs it
