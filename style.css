@@ -1139,3 +1139,44 @@ svg.icon-filled { fill: currentColor; }
     object-fit: contain;
   }
 }
+
+
+/* ---------- Seamless reveal for messages & suggestions ----------
+   When the loading note or the place chips appear, they unfold
+   smoothly and everything below (the globe) glides down with them
+   instead of jumping. */
+.status-message:not([hidden]) {
+  animation: unfold 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.suggestions:not([hidden]) {
+  overflow: hidden;
+  animation: unfold 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes unfold {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    max-height: 560px;
+  }
+}
+
+/* chips drift in one after another */
+.suggestions:not([hidden]) .suggestion-buttons button {
+  opacity: 0;
+  animation: chip-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.suggestion-buttons button:nth-child(1) { animation-delay: 0.08s; }
+.suggestion-buttons button:nth-child(2) { animation-delay: 0.14s; }
+.suggestion-buttons button:nth-child(3) { animation-delay: 0.2s; }
+.suggestion-buttons button:nth-child(4) { animation-delay: 0.26s; }
+.suggestion-buttons button:nth-child(5) { animation-delay: 0.32s; }
+.suggestion-buttons button:nth-child(6) { animation-delay: 0.38s; }
+@keyframes chip-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}

@@ -1396,11 +1396,16 @@ function playPlaneTransition() {
 
     // Size the plane like it appears in the video (same share of
     // the screen height, same vertical position)
-    const planeH = sprite.heightShare * screenH;
+    // Size the plane against the SMALLER screen side, so on tall
+    // phone screens it stays crisp and proportionate instead of
+    // being blown up to full height and turning pixelated.
+    const frameH = Math.min(screenH, screenW);
+    const planeH = sprite.heightShare * frameH;
     const planeW = planeH * (sprite.canvas.width / sprite.canvas.height);
+    const planeTop = sprite.topShare * frameH + (screenH - frameH) / 2;
     const spriteEl = sprite.canvas;
     spriteEl.style.cssText =
-      "position:absolute; left:0; top:" + (sprite.topShare * screenH) + "px;" +
+      "position:absolute; left:0; top:" + planeTop + "px;" +
       "height:" + planeH + "px; width:" + planeW + "px;" +
       "will-change: transform;";
     spriteEl.style.transform = "translateX(" + (-planeW) + "px)";
