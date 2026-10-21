@@ -1493,28 +1493,43 @@ function packingSuggestions(current, daily) {
   const out = [];
 
   if (rainy(code)) {
-    out.push({ icon: "umbrella", text: "Umbrella or raincoat" });
+    out.push({ icon: "umbrella", text: "An umbrella will be your best friend today" });
   } else if (daily && daily.weather_code && daily.weather_code.some(rainy)) {
-    out.push({ icon: "umbrella", text: "Umbrella, rain in the forecast" });
+    out.push({ icon: "umbrella", text: "Slip in an umbrella, rain is on its way" });
   }
   if (code >= 71 && code <= 86) {
-    out.push({ icon: "snowflake", text: "Warm coat, gloves and boots" });
+    out.push({ icon: "snowflake", text: "Bundle up: warm coat, gloves and boots" });
   }
 
-  if (t < 5) out.push({ icon: "snowflake", text: "Thermals and a heavy jacket" });
-  else if (t < 15) out.push({ icon: "shirt", text: "A warm jacket" });
-  else if (t < 22) out.push({ icon: "shirt", text: "Light layers for the evening" });
-  else if (t < 30) out.push({ icon: "shirt", text: "Light cotton clothes" });
-  else out.push({ icon: "sun", text: "Very light clothes, a cap and water" });
+  if (t < 5) out.push({ icon: "snowflake", text: "It\'s properly cold, thermals and a heavy jacket" });
+  else if (t < 15) out.push({ icon: "shirt", text: "A cosy jacket will come in handy" });
+  else if (t < 22) out.push({ icon: "shirt", text: "Light layers are perfect for this" });
+  else if (t < 30) out.push({ icon: "shirt", text: "Breezy cottons will keep you comfortable" });
+  else out.push({ icon: "sun", text: "Keep it light, and carry water" });
 
   if ((code === 0 || code === 1) && t >= 18) {
-    out.push({ icon: "glasses", text: "Sunglasses and sunscreen" });
+    out.push({ icon: "glasses", text: "Sunglasses and sunscreen, trust us" });
   }
   if (current.wind_speed_10m >= 25) {
-    out.push({ icon: "wind", text: "A windbreaker" });
+    out.push({ icon: "wind", text: "A windbreaker beats the gusts" });
   }
   return out.slice(0, 4);
 }
+
+// The big reading next to the temperature is a friendly emoji;
+// every other icon in the app stays lucide.
+const WEATHER_EMOJI = {
+  "sun": "☀️",
+  "cloud-sun": "⛅",
+  "cloud": "☁️",
+  "cloud-fog": "🌫️",
+  "cloud-drizzle": "🌦️",
+  "cloud-rain": "🌧️",
+  "snowflake": "❄️",
+  "cloud-snow": "🌨️",
+  "cloud-lightning": "⛈️",
+  "thermometer": "🌡️",
+};
 
 function describeWeather(code) {
   if (code === 0) return { text: "Clear sky", icon: "sun" };
@@ -1584,14 +1599,14 @@ async function loadWeather() {
     let packHTML = "";
     const pack = packingSuggestions(current, data.daily);
     if (pack.length > 0) {
-      packHTML = "<div class='pack'><p class='pack-title'>What to pack</p>" +
+      packHTML = "<div class='pack'><p class='pack-title'>Don't forget!</p>" +
         pack.map(function (p) {
           return "<p class='weather-detail'>" + chip(p.icon) + p.text + "</p>";
         }).join("") + "</div>";
     }
 
     weatherContent.innerHTML =
-      "<span class='weather-icon'>" + icon(weather.icon) + "</span> " +
+      "<span class='weather-icon'>" + (WEATHER_EMOJI[weather.icon] || "🌡️") + "</span> " +
       "<span class='weather-temp'>" + Math.round(current.temperature_2m) + "°C</span>" +
       "<p>" + weather.text + "</p>" +
       "<p class='weather-detail'>" + chip("thermometer") + "Feels like " + Math.round(current.apparent_temperature) + "°C</p>" +

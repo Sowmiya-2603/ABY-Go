@@ -442,9 +442,9 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1.3fr;
   grid-template-areas:
-    "weather  currency about"
-    "sun      timezone about"
-    "distance distance emergency";
+    "weather currency about"
+    "weather timezone about"
+    "sun distance emergency";
   gap: 20px;
   margin-top: 10px;
 }
