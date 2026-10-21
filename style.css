@@ -1129,3 +1129,13 @@ svg.icon-filled { fill: currentColor; }
   color: var(--text-light);
   margin-bottom: 8px;
 }
+
+
+/* On portrait phones, show the opening video's whole frame instead
+   of a zoomed-in crop; the bars around it match the overlay's own
+   dark background, so nothing looks cut off. */
+@media (max-width: 640px) {
+  .intro video {
+    object-fit: contain;
+  }
+}
