@@ -2748,24 +2748,45 @@ if (tripsBack) tripsBack.addEventListener("click", closeMyTrips);
 const PEXELS_API_KEY = ""; // <-- paste your Pexels API key here
 
 // Remember the photo on the saved trip so we only fetch it once
-function storeTripPhoto(name, photo, credit) {
+function storeTripPhoto(name, found) {
   const saved = getSavedDestinations();
   const trip = saved.find((d) => d.name === name);
   if (!trip) return;
-  trip.photo = photo;
-  trip.photoCredit = credit || "";
+  trip.photo = found.url;
+  trip.photoFallback = found.fallback || "";
+  trip.photoCredit = found.credit || "";
   setSavedDestinations(saved);
 }
 
 async function fetchTripPhoto(trip) {
-  // 1st choice: Pexels (needs the key above)
+  const query =
+    trip.name + (trip.country ? " " + trip.country : "") + " travel";
+
+  // 1st choice: Google Images via our own /api/trip-photo endpoint
+  // (a Vercel function holding a SerpApi key - see api/trip-photo.js).
+  // On localhost, or before the key is set, this quietly fails and
+  // the choices below take over.
+  try {
+    const response = await fetch(
+      "/api/trip-photo?q=" + encodeURIComponent(query)
+    );
+    if (response.ok) {
+      const data = await response.json();
+      if (data.url) {
+        return {
+          url: data.url,
+          fallback: data.fallback || "",
+          credit: data.credit || "Photo: Google Images",
+        };
+      }
+    }
+  } catch (error) { /* fall through */ }
+
+  // 2nd choice: Pexels (needs the key above)
   if (PEXELS_API_KEY) {
     try {
-      const query = encodeURIComponent(
-        trip.name + (trip.country ? " " + trip.country : "") + " travel"
-      );
       const response = await fetch(
-        "https://api.pexels.com/v1/search?query=" + query +
+        "https://api.pexels.com/v1/search?query=" + encodeURIComponent(query) +
           "&per_page=1&orientation=landscape",
         { headers: { Authorization: PEXELS_API_KEY } }
       );
@@ -2782,7 +2803,7 @@ async function fetchTripPhoto(trip) {
     } catch (error) { /* fall through to Wikipedia */ }
   }
 
-  // 2nd choice: the destination's Wikipedia picture (no key needed)
+  // 3rd choice: the destination's Wikipedia picture (no key needed)
   try {
     const response = await fetch(
       "https://en.wikipedia.org/api/rest_v1/page/summary/" +
@@ -2801,39 +2822,52 @@ async function fetchTripPhoto(trip) {
 
 // Fill one card's photo box, fetching if we don't have it yet
 function loadCardPhoto(trip, photoBox) {
-  function show(url, credit) {
+  function show(found) {
+    // A short queue of addresses to try, best first:
+    // a sharper Wikipedia size, the photo itself, then any spare
+    // (e.g. Google's own thumbnail when a site refuses hotlinking).
+    const candidates = [];
+    if (/wikimedia\.org\/.*\/\d+px-/.test(found.url)) {
+      candidates.push(found.url.replace(/\/\d+px-/, "/960px-"));
+    }
+    candidates.push(found.url);
+    if (found.fallback) candidates.push(found.fallback);
+
     const img = document.createElement("img");
-    // Wikipedia thumbnails arrive small (~330px). Try a sharper
-    // 960px version first; if that size doesn't exist, the error
-    // handler quietly falls back to the guaranteed original.
-    const sharper = /wikimedia\.org\/.*\/\d+px-/.test(url)
-      ? url.replace(/\/\d+px-/, "/960px-")
-      : url;
+    let attempt = 0;
     img.onerror = function () {
-      img.onerror = null;
-      img.src = url;
+      attempt += 1;
+      if (attempt < candidates.length) {
+        img.src = candidates[attempt];
+      } else {
+        img.remove(); // the gradient placeholder shows instead
+      }
     };
-    img.src = sharper;
+    img.src = candidates[0];
     img.alt = trip.name;
     img.loading = "lazy";
     photoBox.appendChild(img);
-    if (credit) {
+    if (found.credit) {
       const tag = document.createElement("span");
       tag.className = "photo-tag";
-      tag.textContent = credit;
+      tag.textContent = found.credit;
       photoBox.appendChild(tag);
     }
   }
 
   if (trip.photo) {
-    show(trip.photo, trip.photoCredit);
+    show({
+      url: trip.photo,
+      fallback: trip.photoFallback || "",
+      credit: trip.photoCredit || "",
+    });
     return;
   }
   fetchTripPhoto(trip).then(function (found) {
     if (!found) return; // the gradient placeholder stays
-    storeTripPhoto(trip.name, found.url, found.credit);
+    storeTripPhoto(trip.name, found);
     // Only touch the page if the card is still there
-    if (photoBox.isConnected) show(found.url, found.credit);
+    if (photoBox.isConnected) show(found);
   });
 }
 
