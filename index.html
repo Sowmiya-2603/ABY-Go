@@ -15,7 +15,7 @@
   />
   <!-- The ?v= number forces browsers to fetch the newest files
        instead of old cached ones. Bump it when you change them. -->
-  <link rel="stylesheet" href="style.css?v=101" />
+  <link rel="stylesheet" href="style.css?v=103" />
 </head>
 <body>
 
@@ -42,7 +42,7 @@
       <img src="wordmark.png" alt="ABY Go" class="nav-wordmark" />
     </div>
     <div class="nav-links">
-      <a href="#my-trips">My Trips</a>
+      <a href="#my-trips" id="nav-trips">My Trips</a>
     </div>
     <!-- Takes you back to the "Where are you now?" step -->
     <button id="nav-back" class="nav-back" hidden><svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg> Back</button>
@@ -174,10 +174,16 @@
       <div id="explore-grid" class="explore-grid"></div>
     </section>
 
-    <section id="my-trips" class="saved-section">
-      <h2><span class="ic"><svg class="icon" style="color:#fb7185" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg></span> My Trips</h2>
+    <!-- My Trips is its own screen: hidden until the navbar link
+         opens it, and it replaces the rest of the page while open -->
+    <section id="my-trips" class="trips-screen" hidden>
+      <div class="trips-header">
+        <h2><span class="ic"><svg class="icon" style="color:#fb7185" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg></span> My Trips</h2>
+        <button id="trips-back" class="nav-back trips-back"><svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></svg> Back</button>
+      </div>
       <p id="no-saved-message" class="muted">No saved destinations yet. Pick a place on the globe and press "Save Destination".</p>
-      <ul id="saved-list" class="saved-list"></ul>
+      <div id="saved-list" class="trips-grid"></div>
+      <p class="photo-credit muted small">Destination photos by <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a></p>
     </section>
 
   </main>
@@ -201,6 +207,6 @@
 
   <!-- Tiny offline map of the world's timezones (tz-lookup) -->
   <script src="tz.js"></script>
-  <script src="script.js?v=101"></script>
+  <script src="script.js?v=103"></script>
 </body>
 </html>

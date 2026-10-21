@@ -2680,34 +2680,212 @@ saveButton.addEventListener("click", function () {
   renderSavedList();
 });
 
-// Draw the "My Trips" list on the page
+/* ------------------------------------------------------------
+   THE "MY TRIPS" SCREEN
+   My Trips is a real screen of its own: opening it hides the
+   planner (hero, destination cards, explore) and shows a grid
+   of saved-trip photo cards instead. Back restores the page
+   exactly as it was.
+   ------------------------------------------------------------ */
+const tripsScreen = document.getElementById("my-trips");
+const navTrips = document.getElementById("nav-trips");
+const tripsBack = document.getElementById("trips-back");
+
+// What was visible before My Trips opened, so Back can restore it
+let beforeTrips = null;
+
+function openMyTrips() {
+  if (!tripsScreen.hidden) return;
+  beforeTrips = {
+    hero: document.querySelector(".hero").hidden,
+    header: destinationHeader.hidden,
+    cards: cardsSection.hidden,
+    explore: exploreSection.hidden,
+    navBack: navBackButton ? navBackButton.hidden : true,
+  };
+  document.querySelector(".hero").hidden = true;
+  destinationHeader.hidden = true;
+  cardsSection.hidden = true;
+  exploreSection.hidden = true;
+  if (navBackButton) navBackButton.hidden = true;
+  tripsScreen.hidden = false;
+  renderSavedList();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeMyTrips() {
+  if (tripsScreen.hidden) return;
+  tripsScreen.hidden = true;
+  if (beforeTrips) {
+    document.querySelector(".hero").hidden = beforeTrips.hero;
+    destinationHeader.hidden = beforeTrips.header;
+    cardsSection.hidden = beforeTrips.cards;
+    exploreSection.hidden = beforeTrips.explore;
+    if (navBackButton) navBackButton.hidden = beforeTrips.navBack;
+    beforeTrips = null;
+  } else {
+    document.querySelector(".hero").hidden = false;
+  }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+if (navTrips) navTrips.addEventListener("click", function (e) {
+  e.preventDefault();
+  openMyTrips();
+});
+if (tripsBack) tripsBack.addEventListener("click", closeMyTrips);
+
+/* ------------------------------------------------------------
+   TRIP CARD PHOTOS (Pexels)
+   Each card gets one landscape photo of the destination from
+   the free Pexels API (https://www.pexels.com/api/). Get a key
+   by signing up there, then paste it between the quotes below.
+   The photo is fetched once per trip and remembered in
+   localStorage; without a key (or if Pexels has no match) the
+   card falls back to the destination's Wikipedia picture, and
+   failing that a quiet gradient.
+   ------------------------------------------------------------ */
+const PEXELS_API_KEY = ""; // <-- paste your Pexels API key here
+
+// Remember the photo on the saved trip so we only fetch it once
+function storeTripPhoto(name, photo, credit) {
+  const saved = getSavedDestinations();
+  const trip = saved.find((d) => d.name === name);
+  if (!trip) return;
+  trip.photo = photo;
+  trip.photoCredit = credit || "";
+  setSavedDestinations(saved);
+}
+
+async function fetchTripPhoto(trip) {
+  // 1st choice: Pexels (needs the key above)
+  if (PEXELS_API_KEY) {
+    try {
+      const query = encodeURIComponent(
+        trip.name + (trip.country ? " " + trip.country : "") + " travel"
+      );
+      const response = await fetch(
+        "https://api.pexels.com/v1/search?query=" + query +
+          "&per_page=1&orientation=landscape",
+        { headers: { Authorization: PEXELS_API_KEY } }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const photo = data.photos && data.photos[0];
+        if (photo) {
+          return {
+            url: photo.src.landscape || photo.src.medium,
+            credit: "Photo: " + photo.photographer + " · Pexels",
+          };
+        }
+      }
+    } catch (error) { /* fall through to Wikipedia */ }
+  }
+
+  // 2nd choice: the destination's Wikipedia picture (no key needed)
+  try {
+    const response = await fetch(
+      "https://en.wikipedia.org/api/rest_v1/page/summary/" +
+        encodeURIComponent(trip.name)
+    );
+    if (response.ok) {
+      const data = await response.json();
+      if (data.thumbnail && data.thumbnail.source) {
+        return { url: data.thumbnail.source, credit: "Photo: Wikipedia" };
+      }
+    }
+  } catch (error) { /* no photo, the gradient stays */ }
+
+  return null;
+}
+
+// Fill one card's photo box, fetching if we don't have it yet
+function loadCardPhoto(trip, photoBox) {
+  function show(url, credit) {
+    const img = document.createElement("img");
+    // Wikipedia thumbnails arrive small (~330px). Try a sharper
+    // 960px version first; if that size doesn't exist, the error
+    // handler quietly falls back to the guaranteed original.
+    const sharper = /wikimedia\.org\/.*\/\d+px-/.test(url)
+      ? url.replace(/\/\d+px-/, "/960px-")
+      : url;
+    img.onerror = function () {
+      img.onerror = null;
+      img.src = url;
+    };
+    img.src = sharper;
+    img.alt = trip.name;
+    img.loading = "lazy";
+    photoBox.appendChild(img);
+    if (credit) {
+      const tag = document.createElement("span");
+      tag.className = "photo-tag";
+      tag.textContent = credit;
+      photoBox.appendChild(tag);
+    }
+  }
+
+  if (trip.photo) {
+    show(trip.photo, trip.photoCredit);
+    return;
+  }
+  fetchTripPhoto(trip).then(function (found) {
+    if (!found) return; // the gradient placeholder stays
+    storeTripPhoto(trip.name, found.url, found.credit);
+    // Only touch the page if the card is still there
+    if (photoBox.isConnected) show(found.url, found.credit);
+  });
+}
+
+// Draw the "My Trips" screen: one photo card per saved trip
 function renderSavedList() {
   const saved = getSavedDestinations();
   savedList.innerHTML = "";
   noSavedMessage.hidden = saved.length > 0;
 
   for (const trip of saved) {
-    const item = document.createElement("li");
+    const card = document.createElement("article");
+    card.className = "trip-card";
 
-    // Clicking the name loads that destination again
-    const nameButton = document.createElement("button");
-    nameButton.className = "trip-name";
-    nameButton.innerHTML = icon("heart", true) + " ";
-    nameButton.appendChild(document.createTextNode(trip.name));
-    nameButton.addEventListener("click", function () {
+    // Photo on top (gradient placeholder until a photo arrives)
+    const photoBox = document.createElement("div");
+    photoBox.className = "trip-card-photo";
+    photoBox.innerHTML = icon("map-pin");
+    loadCardPhoto(trip, photoBox);
+
+    // Name and country
+    const body = document.createElement("div");
+    body.className = "trip-card-body";
+    const title = document.createElement("h3");
+    title.textContent = trip.name;
+    const subtitle = document.createElement("p");
+    subtitle.className = "muted";
+    subtitle.textContent = trip.country || "";
+    body.appendChild(title);
+    body.appendChild(subtitle);
+
+    // Open the trip again / remove it
+    const actions = document.createElement("div");
+    actions.className = "trip-card-actions";
+
+    const openButton = document.createElement("button");
+    openButton.className = "trip-open";
+    openButton.innerHTML = icon("map") + " Open";
+    openButton.addEventListener("click", function () {
       // A saved trip is always a DESTINATION, even if the page is
       // still on the "where are you now?" step.
+      closeMyTrips();
       pickingHome = false;
       applyStageText();
       searchDestination(trip.name);
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    // The little ✕ button removes the trip
     const removeButton = document.createElement("button");
     removeButton.className = "remove-trip";
     removeButton.innerHTML = icon("x");
     removeButton.title = "Remove " + trip.name;
+    removeButton.setAttribute("aria-label", "Remove " + trip.name);
     removeButton.addEventListener("click", function () {
       const remaining = getSavedDestinations().filter(
         (d) => d.name !== trip.name
@@ -2717,9 +2895,13 @@ function renderSavedList() {
       if (currentDestination) updateSaveButton();
     });
 
-    item.appendChild(nameButton);
-    item.appendChild(removeButton);
-    savedList.appendChild(item);
+    actions.appendChild(openButton);
+    actions.appendChild(removeButton);
+
+    card.appendChild(photoBox);
+    card.appendChild(body);
+    card.appendChild(actions);
+    savedList.appendChild(card);
   }
 }
 
