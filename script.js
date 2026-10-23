@@ -339,17 +339,23 @@ function drawTexturedSphere(ctx) {
   );
 }
 
-// Load the country shapes, then draw the globe
+// Load the country shapes, then draw the globe. The file ships
+// with the app (countries.geo.json) so the boundary lines always
+// appear, even with no internet; GitHub is only a spare copy.
 async function loadWorldShapes() {
-  try {
-    const url =
-      "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json";
-    const response = await fetch(url);
-    worldShapes = await response.json();
-  } catch (error) {
-    // If the map can't load we still show a plain globe with a grid,
-    // and clicking it still works.
-    worldShapes = null;
+  const sources = [
+    "countries.geo.json",
+    "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json",
+  ];
+  for (const url of sources) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) continue;
+      worldShapes = await response.json();
+      break;
+    } catch (error) {
+      // try the next source
+    }
   }
   drawGlobe();
 }
@@ -437,8 +443,8 @@ function drawRing(ring) {
   us, lifting the pen whenever a line slips behind the globe.
 */
 function drawCountryBorders(ctx) {
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.lineWidth = 1.4;
   ctx.beginPath();
 
   function traceRing(ring) {
@@ -2908,19 +2914,6 @@ function renderSavedList() {
 /* ------------------------------------------------------------
    RUN ON PAGE LOAD
    ------------------------------------------------------------ */
-// Some browsers (e.g. Macs in Low Power Mode) block videos from
-// starting by themselves. If the background video was blocked,
-// start it on the user's first click or key press instead.
-function nudgeBackgroundVideo() {
-  const bg = document.querySelector(".bg-video");
-  if (bg && bg.paused) {
-    bg.play().catch(function () { /* it will retry on next tap */ });
-  }
-}
-nudgeBackgroundVideo();
-document.addEventListener("pointerdown", nudgeBackgroundVideo);
-document.addEventListener("keydown", nudgeBackgroundVideo);
-
 fillCurrencyDropdowns();
 renderSavedList();
 // The journey ALWAYS begins at "Where are you now?". If a home

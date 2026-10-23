@@ -70,28 +70,25 @@ body {
   color: var(--text-light);
 }
 
-/* ---------- Video background ---------- */
-/* The video fills the screen and stays put while scrolling... */
-.bg-video {
+/* ---------- Night-sky photo background ---------- */
+/* The photo fills the screen and stays put while scrolling... */
+.bg-image {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* crop instead of squash */
-  opacity: 0.5; /* keep the starfield subtle */
+  background: #04060c url("night-sky.webp") center / cover no-repeat;
   z-index: -2;
 }
 
-/* ...and this dark tint sits on top of it, keeping the night
-   mood and the text easy to read */
+/* ...and this light tint sits on top of it. The photo is already
+   dark, so the tint only needs to calm the brightest stars. */
 .bg-scrim {
   position: fixed;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(4, 6, 12, 0.82) 0%,
-    rgba(7, 12, 26, 0.68) 55%,
-    rgba(10, 18, 38, 0.78) 100%
+    rgba(4, 6, 12, 0.45) 0%,
+    rgba(7, 12, 26, 0.25) 55%,
+    rgba(10, 18, 38, 0.45) 100%
   );
   z-index: -1;
 }
@@ -827,8 +824,9 @@ body {
 /* One photo card per saved trip */
 .trips-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 18px;
+  align-items: stretch;
 }
 
 .trip-card {
@@ -883,12 +881,20 @@ body {
 }
 
 .trip-card-body {
-  padding: 12px 14px 4px;
+  padding: 12px 14px 0;
 }
 
+/* The name reads like a title, not a banner: no all-caps here */
 .trip-card-body h3 {
   color: #ffffff;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.trip-card-body p {
+  margin: 2px 0 0;
 }
 
 .trip-card-actions {
@@ -896,7 +902,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 14px 14px;
+  padding: 12px 14px 14px;
   margin-top: auto;
 }
 
@@ -1213,12 +1219,15 @@ svg.icon-filled { fill: currentColor; }
 }
 
 
-/* On portrait phones, show the opening video's whole frame instead
-   of a zoomed-in crop; the bars around it match the overlay's own
-   dark background, so nothing looks cut off. */
+/* On portrait phones, give the opening video a height that suits
+   the screen: a tall centred frame rather than a thin letterboxed
+   strip. The sides of the starfield crop away, but the wordmark
+   sits dead centre, so nothing important is ever cut off. */
 @media (max-width: 640px) {
   .intro video {
-    object-fit: contain;
+    width: 100%;
+    height: 62vh;
+    object-fit: cover;
   }
 }
 
