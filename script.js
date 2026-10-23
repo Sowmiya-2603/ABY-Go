@@ -2914,6 +2914,19 @@ function renderSavedList() {
 /* ------------------------------------------------------------
    RUN ON PAGE LOAD
    ------------------------------------------------------------ */
+// Some browsers (e.g. Macs in Low Power Mode) block videos from
+// starting by themselves. If the background video was blocked,
+// start it on the user's first click or key press instead.
+function nudgeBackgroundVideo() {
+  const bg = document.querySelector(".bg-video");
+  if (bg && bg.paused) {
+    bg.play().catch(function () { /* it will retry on next tap */ });
+  }
+}
+nudgeBackgroundVideo();
+document.addEventListener("pointerdown", nudgeBackgroundVideo);
+document.addEventListener("keydown", nudgeBackgroundVideo);
+
 fillCurrencyDropdowns();
 renderSavedList();
 // The journey ALWAYS begins at "Where are you now?". If a home

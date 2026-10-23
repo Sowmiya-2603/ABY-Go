@@ -70,17 +70,20 @@ body {
   color: var(--text-light);
 }
 
-/* ---------- Night-sky photo background ---------- */
-/* The photo fills the screen and stays put while scrolling... */
-.bg-image {
+/* ---------- Video background ---------- */
+/* The video fills the screen and stays put while scrolling... */
+.bg-video {
   position: fixed;
   inset: 0;
-  background: #04060c url("night-sky.webp") center / cover no-repeat;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop instead of squash */
+  opacity: 0.3; /* faint, so the starfield stays in the background */
   z-index: -2;
 }
 
-/* ...and this light tint sits on top of it. The photo is already
-   dark, so the tint only needs to calm the brightest stars. */
+/* ...and this light tint sits on top of it, calming the
+   brightest stars so the words stay easy to read */
 .bg-scrim {
   position: fixed;
   inset: 0;
@@ -454,6 +457,23 @@ body {
 .card-distance  { grid-area: distance; }
 .card-emergency { grid-area: emergency; }
 
+/* The sunrise and emergency cards hold less than their row-mates
+   (the tall distance card), so instead of leaving a hollow bottom,
+   their content centres itself in the spare height. */
+.card-sun,
+.card-emergency {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-sun #sun-content,
+.card-emergency #emergency-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 /* Emergency number rows */
 .emg-row {
   display: flex;
@@ -566,7 +586,7 @@ body {
   /* the distance card is wide, so show the modes in two columns */
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px 40px;
+  gap: 4px 22px;
 }
 
 @media (max-width: 600px) {
@@ -578,14 +598,27 @@ body {
 .travel-modes div {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 10px;
   margin: 4px 0;
   font-size: 0.95rem;
   color: var(--text-light);
 }
 
+/* Keep each "✈ Flight — 16h 49m" on ONE line; never let the
+   duration wrap underneath the label */
+.travel-modes div span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .travel-modes div span:last-child {
   color: var(--text);
   font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .card {

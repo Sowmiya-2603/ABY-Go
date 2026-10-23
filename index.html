@@ -15,7 +15,7 @@
   />
   <!-- The ?v= number forces browsers to fetch the newest files
        instead of old cached ones. Bump it when you change them. -->
-  <link rel="stylesheet" href="style.css?v=106" />
+  <link rel="stylesheet" href="style.css?v=107" />
 </head>
 <body>
 
@@ -25,9 +25,16 @@
     <video id="intro-video" src="intro.mp4?v=3" muted playsinline preload="auto"></video>
   </div>
 
-  <!-- Starry night-sky photo behind everything, with a light
+  <!-- Looping video background, behind everything, with a dark
        tint on top so the words stay easy to read -->
-  <div class="bg-image"></div>
+  <video
+    class="bg-video"
+    src="background.mp4"
+    autoplay
+    muted
+    loop
+    playsinline
+  ></video>
   <div class="bg-scrim"></div>
 
   <nav class="navbar">
@@ -200,6 +207,6 @@
 
   <!-- Tiny offline map of the world's timezones (tz-lookup) -->
   <script src="tz.js"></script>
-  <script src="script.js?v=106"></script>
+  <script src="script.js?v=107"></script>
 </body>
 </html>
